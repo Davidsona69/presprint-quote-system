@@ -1,0 +1,34 @@
+{
+  "_comment": "All rates in XAF. Replace these placeholder numbers with real Presprint PLC rates from Week 1 interviews.",
+
+  "paper_rates": {
+    "A3": { "matte": 150, "glossy": 200, "uncoated": 120 },
+    "A4": { "matte": 60,  "glossy": 90,  "uncoated": 50  },
+    "A5": { "matte": 35,  "glossy": 50,  "uncoated": 30  }
+  },
+
+  "ink_rates": {
+    "full_color": 40,
+    "black_white": 10
+  },
+
+  "finishing_rates": {
+    "lamination":       { "flat": 500, "per_unit": 25 },
+    "spiral binding":   { "flat": 1000, "per_unit": 0 },
+    "stapling":         { "flat": 0,   "per_unit": 5  },
+    "folding":          { "flat": 0,   "per_unit": 10 },
+    "die-cut":          { "flat": 1500, "per_unit": 15 },
+    "perforation":      { "flat": 500, "per_unit": 5  },
+    "embossing":        { "flat": 2000, "per_unit": 30 }
+  },
+
+  "volume_discount_tiers": [
+    { "min_quantity": 1,    "max_quantity": 99,   "discount_percent": 0  },
+    { "min_quantity": 100,  "max_quantity": 499,  "discount_percent": 5  },
+    { "min_quantity": 500,  "max_quantity": 999,  "discount_percent": 10 },
+    { "min_quantity": 1000, "max_quantity": null, "discount_percent": 15 }
+  ],
+
+  "rush_fee_percent": 20,
+  "tax_percent": 19.25
+}

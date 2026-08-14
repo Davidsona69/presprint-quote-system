@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Presprint — Quote Engine</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/3.4.1/tailwind.min.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --paper: #f6f3ee;
+    --ink: #1c1b19;
+    --ink-soft: #4a4741;
+    --press-orange: #e8571c;
+    --registration-cyan: #0a7d8c;
+    --line: #d8d2c4;
+  }
+  * { font-family: 'Space Grotesk', sans-serif; }
+  .mono { font-family: 'JetBrains Mono', monospace; }
+  body { background: var(--paper); color: var(--ink); }
+
+  /* Registration mark — the signature element, echoing print-shop crop/reg marks */
+  .reg-mark { position: relative; width: 18px; height: 18px; }
+  .reg-mark::before, .reg-mark::after {
+    content: ''; position: absolute; background: currentColor;
+  }
+  .reg-mark::before { top: 50%; left: 0; width: 100%; height: 1px; transform: translateY(-50%); }
+  .reg-mark::after { left: 50%; top: 0; height: 100%; width: 1px; transform: translateX(-50%); }
+  .reg-mark-circle { position: absolute; top: 50%; left: 50%; width: 8px; height: 8px;
+    border: 1px solid currentColor; border-radius: 50%; transform: translate(-50%, -50%); }
+
+  .card { background: #fff; border: 1px solid var(--line); }
+  .press-btn {
+    background: var(--ink); color: var(--paper);
+    transition: transform 0.12s ease, background 0.12s ease;
+  }
+  .press-btn:hover { background: var(--press-orange); }
+  .press-btn:active { transform: scale(0.98); }
+
+  .field-tag {
+    font-size: 0.68rem; letter-spacing: 0.06em; text-transform: uppercase;
+    color: var(--ink-soft);
+  }
+
+  .confidence-bar { height: 3px; background: var(--line); overflow: hidden; }
+  .confidence-fill { height: 100%; background: var(--registration-cyan); transition: width 0.4s ease; }
+
+  ::selection { background: var(--press-orange); color: white; }
+</style>
+</head>
+<body class="min-h-screen">
+
+  <!-- Header -->
+  <header class="border-b border-[var(--line)] px-6 py-4 flex items-center justify-between">
+    <div class="flex items-center gap-3">
+      <div class="reg-mark text-[var(--press-orange)]"><div class="reg-mark-circle"></div></div>
+      <div>
+        <h1 class="font-semibold text-lg tracking-tight">PRESPRINT</h1>
+        <p class="text-xs mono text-[var(--ink-soft)] -mt-1">quote engine · rev.001</p>
+      </div>
+    </div>
+    <span class="mono text-xs text-[var(--ink-soft)]" id="api-status">checking api…</span>
+  </header>
+
+  <main class="max-w-3xl mx-auto px-6 py-10">
+
+    <!-- Prompt input -->
+    <section class="mb-8">
+      <label class="field-tag block mb-2">Client Order Request</label>
+      <div class="card p-1 flex gap-2">
+        <input id="query-input" type="text"
+          placeholder="e.g. I need 500 copies of A4 glossy flyers, double-sided color, by Friday"
+          class="flex-1 px-4 py-3 outline-none text-sm bg-transparent"
+        />
+        <button id="extract-btn" class="press-btn px-5 py-3 text-sm font-medium">
+          Extract →
+        </button>
+      </div>
+      <p class="mono text-xs text-[var(--ink-soft)] mt-2">Plain text in. Structured spec out.</p>
+    </section>
+
+    <!-- Extracted spec cards -->
+    <section id="spec-section" class="mb-8 hidden">
+      <div class="flex items-center justify-between mb-3">
+        <label class="field-tag">Extracted Specification</label>
+        <div class="flex items-center gap-2">
+          <span class="mono text-xs text-[var(--ink-soft)]" id="confidence-label">—</span>
+          <div class="confidence-bar w-20"><div class="confidence-fill" id="confidence-fill" style="width:0%"></div></div>
+        </div>
+      </div>
+
+      <div class="card p-5 grid grid-cols-2 sm:grid-cols-3 gap-4" id="spec-grid">
+        <!-- populated by JS -->
+      </div>
+      <p id="low-confidence-warning" class="text-xs mono mt-2 hidden" style="color: var(--press-orange)">
+        ⚠ Low confidence — several fields weren't detected. Fill in the blanks above before calculating.
+      </p>
+
+      <button id="quote-btn" class="press-btn w-full mt-4 py-3 text-sm font-medium">
+        Calculate Quote →
+      </button>
+    </section>
+
+    <!-- Quote breakdown -->
+    <section id="quote-section" class="hidden">
+      <label class="field-tag block mb-3">Quote Breakdown</label>
+      <div class="card p-5">
+        <div id="breakdown-list" class="space-y-2 mb-4 mono text-sm"></div>
+        <div class="border-t border-[var(--line)] pt-4 space-y-1 mono text-sm">
+          <div class="flex justify-between text-[var(--ink-soft)]"><span>Subtotal</span><span id="subtotal">—</span></div>
+          <div class="flex justify-between text-[var(--ink-soft)]"><span>Discount</span><span id="discount">—</span></div>
+          <div class="flex justify-between text-[var(--ink-soft)]"><span>Rush fee</span><span id="rushfee">—</span></div>
+          <div class="flex justify-between text-[var(--ink-soft)]"><span>Tax</span><span id="tax">—</span></div>
+          <div class="flex justify-between font-semibold text-base pt-2 border-t border-[var(--line)] mt-2">
+            <span>Total</span><span id="total" class="text-[var(--press-orange)]">—</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <footer class="max-w-3xl mx-auto px-6 py-6 mono text-xs text-[var(--ink-soft)]">
+    Presprint PLC · Automated Quote Engine · Internal Tool
+  </footer>
+
+<script>
+  // Point this at your backend. Via docker-compose it's exposed on :8000,
+  // or proxied under /api/ once nginx-proxy is in front (Week 7).
+  const API_BASE = "http://localhost:8000";
+
+  const els = {
+    input: document.getElementById('query-input'),
+    extractBtn: document.getElementById('extract-btn'),
+    specSection: document.getElementById('spec-section'),
+    specGrid: document.getElementById('spec-grid'),
+    confidenceLabel: document.getElementById('confidence-label'),
+    confidenceFill: document.getElementById('confidence-fill'),
+    quoteBtn: document.getElementById('quote-btn'),
+    quoteSection: document.getElementById('quote-section'),
+    breakdownList: document.getElementById('breakdown-list'),
+    subtotal: document.getElementById('subtotal'),
+    discount: document.getElementById('discount'),
+    rushfee: document.getElementById('rushfee'),
+    tax: document.getElementById('tax'),
+    total: document.getElementById('total'),
+    apiStatus: document.getElementById('api-status'),
+  };
+
+  let currentEntities = null;
+  let currentConfidence = 0;
+  let currentQuery = "";
+
+  const fmtXAF = (n) => `${Number(n).toLocaleString()} XAF`;
+
+  const FIELD_LABELS = {
+    item_type: "Item", quantity: "Quantity", paper_size: "Size",
+    paper_finish: "Finish", print_side: "Sides", color_mode: "Color", urgency: "Urgency",
+  };
+
+  async function checkHealth() {
+    try {
+      const res = await fetch(`${API_BASE}/health`);
+      if (res.ok) { els.apiStatus.textContent = "● api connected"; els.apiStatus.style.color = "#0a7d8c"; }
+      else throw new Error();
+    } catch {
+      els.apiStatus.textContent = "● api offline (start backend)"; els.apiStatus.style.color = "#e8571c";
+    }
+  }
+  checkHealth();
+
+  function renderSpecGrid(entities) {
+    els.specGrid.innerHTML = "";
+    for (const [key, label] of Object.entries(FIELD_LABELS)) {
+      const val = entities[key];
+      const div = document.createElement('div');
+      div.innerHTML = `
+        <div class="field-tag mb-1">${label}</div>
+        <input data-field="${key}" value="${val ?? ''}" placeholder="not detected"
+          class="w-full border border-[var(--line)] px-2 py-1.5 text-sm mono outline-none focus:border-[var(--press-orange)] placeholder:text-[var(--line)]" />
+      `;
+      els.specGrid.appendChild(div);
+    }
+    if (entities.finishing && entities.finishing.length) {
+      const div = document.createElement('div');
+      div.className = "col-span-2 sm:col-span-3";
+      div.innerHTML = `
+        <div class="field-tag mb-1">Finishing</div>
+        <div class="text-sm mono">${entities.finishing.join(", ")}</div>
+      `;
+      els.specGrid.appendChild(div);
+    }
+  }
+
+  function readSpecGridOverrides() {
+    const inputs = els.specGrid.querySelectorAll('[data-field]');
+    const out = { ...currentEntities };
+    inputs.forEach(inp => {
+      const key = inp.dataset.field;
+      let val = inp.value.trim();
+      if (val === "") val = null;
+      if (key === "quantity" && val) val = parseInt(val, 10);
+      out[key] = val;
+    });
+    return out;
+  }
+
+  els.extractBtn.addEventListener('click', async () => {
+    const query = els.input.value.trim();
+    if (!query) return;
+    currentQuery = query;
+    els.extractBtn.disabled = true;
+    els.extractBtn.textContent = "Extracting…";
+
+    try {
+      const res = await fetch(`${API_BASE}/extract-specs`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ query }),
+      });
+      const data = await res.json();
+      currentEntities = data.extracted_entities;
+      currentConfidence = data.confidence_score;
+
+      renderSpecGrid(currentEntities);
+      els.confidenceLabel.textContent = `confidence ${(currentConfidence * 100).toFixed(0)}%`;
+      els.confidenceFill.style.width = `${currentConfidence * 100}%`;
+      els.confidenceFill.style.background = data.needs_confirmation ? '#e8571c' : '#0a7d8c';
+      document.getElementById('low-confidence-warning').classList.toggle('hidden', !data.needs_confirmation);
+
+      els.specSection.classList.remove('hidden');
+      els.quoteSection.classList.add('hidden');
+    } catch (e) {
+      alert("Could not reach the backend. Is it running? (see README)");
+    } finally {
+      els.extractBtn.disabled = false;
+      els.extractBtn.textContent = "Extract →";
+    }
+  });
+
+  els.quoteBtn.addEventListener('click', async () => {
+    const entities = readSpecGridOverrides();
+    els.quoteBtn.disabled = true;
+    els.quoteBtn.textContent = "Calculating…";
+
+    try {
+      const res = await fetch(`${API_BASE}/calculate-quote`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ entities, raw_query: currentQuery, confidence_score: currentConfidence }),
+      });
+      const data = await res.json();
+
+      els.breakdownList.innerHTML = data.breakdown.map(li => `
+        <div class="flex justify-between text-[var(--ink-soft)]">
+          <span>${li.label}</span><span>${fmtXAF(li.amount_xaf)}</span>
+        </div>
+      `).join("");
+      els.subtotal.textContent = fmtXAF(data.subtotal_xaf);
+      els.discount.textContent = `− ${fmtXAF(data.discount_xaf)}`;
+      els.rushfee.textContent = fmtXAF(data.rush_fee_xaf);
+      els.tax.textContent = fmtXAF(data.tax_xaf);
+      els.total.textContent = fmtXAF(data.total_xaf);
+
+      els.quoteSection.classList.remove('hidden');
+    } catch (e) {
+      alert("Could not calculate quote. Is the backend running?");
+    } finally {
+      els.quoteBtn.disabled = false;
+      els.quoteBtn.textContent = "Calculate Quote →";
+    }
+  });
+
+  els.input.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') els.extractBtn.click();
+  });
+</script>
+</body>
+</html>

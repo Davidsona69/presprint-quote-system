@@ -51,3 +51,35 @@ async def test_calculate_quote_basic():
     data = res.json()
     assert data["total_xaf"] > 0
     assert data["rush_fee_xaf"] > 0  # urgency=high should trigger rush fee
+
+
+@pytest.mark.asyncio
+async def test_place_order_and_receipt():
+    transport = ASGITransport(app=app)
+    entities = {
+        "item_type": "flyer", "quantity": 200, "paper_size": "A4",
+        "paper_finish": "matte", "print_side": "single", "color_mode": "full_color",
+        "finishing": [], "urgency": "standard",
+    }
+    async with AsyncClient(transport=transport, base_url="http://test") as ac:
+        quote_res = await ac.post("/calculate-quote", json={
+            "entities": entities, "raw_query": "200 A4 flyers"
+        })
+        quote_id = quote_res.json()["id"]
+
+        order_res = await ac.post("/orders", json={
+            "quote_id": quote_id,
+            "client_name": "Test Client Ltd",
+            "client_contact": "670000000",
+        })
+        assert order_res.status_code == 200
+        receipt = order_res.json()
+        assert receipt["client_name"] == "Test Client Ltd"
+        assert receipt["status"] == "pending"
+        assert receipt["total_xaf"] == quote_res.json()["total_xaf"]
+        assert len(receipt["breakdown"]) > 0
+
+        order_id = receipt["order_id"]
+        fetched = await ac.get(f"/orders/{order_id}/receipt")
+        assert fetched.status_code == 200
+        assert fetched.json()["order_id"] == order_id

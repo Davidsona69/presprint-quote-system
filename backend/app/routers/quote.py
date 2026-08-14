@@ -22,6 +22,10 @@ async def calculate_quote(payload: QuoteRequest, db: AsyncSession = Depends(get_
         extracted_entities=payload.entities.model_dump(),
         confidence_score=payload.confidence_score or 0.0,
         breakdown=result["breakdown"],
+        subtotal_xaf=result["subtotal_xaf"],
+        discount_xaf=result["discount_xaf"],
+        rush_fee_xaf=result["rush_fee_xaf"],
+        tax_xaf=result["tax_xaf"],
         total_xaf=result["total_xaf"],
         created_at=datetime.utcnow(),
     )

@@ -119,6 +119,86 @@
       </div>
     </section>
 
+    <!-- Place order -->
+    <section id="order-form-section" class="mt-8 hidden">
+      <label class="field-tag block mb-3">Place Order</label>
+      <div class="card p-5 space-y-3">
+        <div>
+          <div class="field-tag mb-1">Client Name</div>
+          <input id="client-name-input" type="text" placeholder="e.g. Ekema Print Supplies Ltd"
+            class="w-full border border-[var(--line)] px-3 py-2 text-sm outline-none focus:border-[var(--press-orange)]" />
+        </div>
+        <div>
+          <div class="field-tag mb-1">Contact (phone or email)</div>
+          <input id="client-contact-input" type="text" placeholder="e.g. 6xx xxx xxx"
+            class="w-full border border-[var(--line)] px-3 py-2 text-sm outline-none focus:border-[var(--press-orange)]" />
+        </div>
+        <button id="place-order-btn" class="press-btn w-full py-3 text-sm font-medium">
+          Place Order →
+        </button>
+      </div>
+    </section>
+
+    <!-- Receipt -->
+    <section id="receipt-section" class="mt-8 hidden">
+      <div class="flex items-center justify-between mb-3 no-print">
+        <label class="field-tag">Order Receipt</label>
+        <button id="print-receipt-btn" class="text-xs mono underline text-[var(--ink-soft)] hover:text-[var(--press-orange)]">
+          Print / Save as PDF
+        </button>
+      </div>
+      <div class="card p-6" id="receipt-card">
+        <div class="flex items-center justify-between mb-6 pb-4 border-b border-[var(--line)]">
+          <div class="flex items-center gap-3">
+            <div class="reg-mark text-[var(--press-orange)]"><div class="reg-mark-circle"></div></div>
+            <div>
+              <div class="font-semibold">PRESPRINT PLC</div>
+              <div class="text-xs mono text-[var(--ink-soft)]">Limbe, Cameroon</div>
+            </div>
+          </div>
+          <div class="text-right">
+            <div class="field-tag">Receipt</div>
+            <div class="mono text-xs" id="receipt-order-id">—</div>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-4 mb-6 text-sm">
+          <div>
+            <div class="field-tag mb-1">Client</div>
+            <div id="receipt-client-name">—</div>
+            <div class="mono text-xs text-[var(--ink-soft)]" id="receipt-client-contact"></div>
+          </div>
+          <div class="text-right">
+            <div class="field-tag mb-1">Date</div>
+            <div class="mono text-sm" id="receipt-date">—</div>
+            <div class="field-tag mt-2 mb-1">Status</div>
+            <div class="mono text-xs uppercase" id="receipt-status">—</div>
+          </div>
+        </div>
+
+        <div class="mb-4 text-sm">
+          <div class="field-tag mb-1">Order Request</div>
+          <div class="italic text-[var(--ink-soft)]" id="receipt-raw-query">—</div>
+        </div>
+
+        <div id="receipt-breakdown" class="space-y-2 mb-4 mono text-sm border-t border-[var(--line)] pt-4"></div>
+
+        <div class="space-y-1 mono text-sm border-t border-[var(--line)] pt-4">
+          <div class="flex justify-between text-[var(--ink-soft)]"><span>Subtotal</span><span id="receipt-subtotal">—</span></div>
+          <div class="flex justify-between text-[var(--ink-soft)]"><span>Discount</span><span id="receipt-discount">—</span></div>
+          <div class="flex justify-between text-[var(--ink-soft)]"><span>Rush fee</span><span id="receipt-rushfee">—</span></div>
+          <div class="flex justify-between text-[var(--ink-soft)]"><span>Tax</span><span id="receipt-tax">—</span></div>
+          <div class="flex justify-between font-semibold text-base pt-2 border-t border-[var(--line)] mt-2">
+            <span>Total</span><span id="receipt-total" class="text-[var(--press-orange)]">—</span>
+          </div>
+        </div>
+
+        <p class="text-xs mono text-[var(--ink-soft)] mt-6 pt-4 border-t border-[var(--line)]">
+          Thank you for your order. This receipt confirms your order has been received and is pending production.
+        </p>
+      </div>
+    </section>
+
   </main>
 
   <footer class="max-w-3xl mx-auto px-6 py-6 mono text-xs text-[var(--ink-soft)]">
@@ -146,11 +226,19 @@
     tax: document.getElementById('tax'),
     total: document.getElementById('total'),
     apiStatus: document.getElementById('api-status'),
+    orderFormSection: document.getElementById('order-form-section'),
+    clientNameInput: document.getElementById('client-name-input'),
+    clientContactInput: document.getElementById('client-contact-input'),
+    placeOrderBtn: document.getElementById('place-order-btn'),
+    receiptSection: document.getElementById('receipt-section'),
+    printReceiptBtn: document.getElementById('print-receipt-btn'),
   };
 
   let currentEntities = null;
   let currentConfidence = 0;
   let currentQuery = "";
+  let currentQuoteId = null;
+  let currentReceipt = null;
 
   const fmtXAF = (n) => `${Number(n).toLocaleString()} XAF`;
 
@@ -231,6 +319,9 @@
 
       els.specSection.classList.remove('hidden');
       els.quoteSection.classList.add('hidden');
+      els.orderFormSection.classList.add('hidden');
+      els.receiptSection.classList.add('hidden');
+      currentQuoteId = null;
     } catch (e) {
       alert("Could not reach the backend. Is it running? (see README)");
     } finally {
@@ -251,6 +342,7 @@
         body: JSON.stringify({ entities, raw_query: currentQuery, confidence_score: currentConfidence }),
       });
       const data = await res.json();
+      currentQuoteId = data.id;
 
       els.breakdownList.innerHTML = data.breakdown.map(li => `
         <div class="flex justify-between text-[var(--ink-soft)]">
@@ -264,6 +356,8 @@
       els.total.textContent = fmtXAF(data.total_xaf);
 
       els.quoteSection.classList.remove('hidden');
+      els.orderFormSection.classList.remove('hidden');
+      els.receiptSection.classList.add('hidden');
     } catch (e) {
       alert("Could not calculate quote. Is the backend running?");
     } finally {
@@ -271,6 +365,176 @@
       els.quoteBtn.textContent = "Calculate Quote →";
     }
   });
+
+  els.placeOrderBtn.addEventListener('click', async () => {
+    if (!currentQuoteId) {
+      alert("Calculate a quote first.");
+      return;
+    }
+    els.placeOrderBtn.disabled = true;
+    els.placeOrderBtn.textContent = "Placing order…";
+
+    try {
+      const res = await fetch(`${API_BASE}/orders`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          quote_id: currentQuoteId,
+          client_name: els.clientNameInput.value.trim() || null,
+          client_contact: els.clientContactInput.value.trim() || null,
+        }),
+      });
+      if (!res.ok) throw new Error(await res.text());
+      const receipt = await res.json();
+      renderReceipt(receipt);
+      els.receiptSection.classList.remove('hidden');
+      els.receiptSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    } catch (e) {
+      alert("Could not place order. Is the backend running, and did you calculate a quote first?");
+    } finally {
+      els.placeOrderBtn.disabled = false;
+      els.placeOrderBtn.textContent = "Place Order →";
+    }
+  });
+
+  function renderReceipt(r) {
+    currentReceipt = r;
+    document.getElementById('receipt-order-id').textContent = `#${r.order_id.slice(0, 8).toUpperCase()}`;
+    document.getElementById('receipt-client-name').textContent = r.client_name || "Walk-in client";
+    document.getElementById('receipt-client-contact').textContent = r.client_contact || "";
+    document.getElementById('receipt-date').textContent = new Date(r.created_at).toLocaleString();
+    document.getElementById('receipt-status').textContent = r.status;
+    document.getElementById('receipt-raw-query').textContent = r.raw_query || "(manually specified)";
+
+    document.getElementById('receipt-breakdown').innerHTML = r.breakdown.map(li => `
+      <div class="flex justify-between text-[var(--ink-soft)]">
+        <span>${li.label}</span><span>${fmtXAF(li.amount_xaf)}</span>
+      </div>
+    `).join("");
+    document.getElementById('receipt-subtotal').textContent = fmtXAF(r.subtotal_xaf);
+    document.getElementById('receipt-discount').textContent = `− ${fmtXAF(r.discount_xaf)}`;
+    document.getElementById('receipt-rushfee').textContent = fmtXAF(r.rush_fee_xaf);
+    document.getElementById('receipt-tax').textContent = fmtXAF(r.tax_xaf);
+    document.getElementById('receipt-total').textContent = fmtXAF(r.total_xaf);
+  }
+
+  function printReceipt() {
+    if (!currentReceipt) {
+      alert("Place an order first — there's no receipt to print yet.");
+      return;
+    }
+    const r = currentReceipt;
+    const rows = r.breakdown.map(li => `
+      <div class="row"><span>${escapeHtml(li.label)}</span><span>${fmtXAF(li.amount_xaf)}</span></div>
+    `).join("");
+
+    // A dedicated, self-contained print document — avoids relying on the
+    // Tailwind CDN script re-rendering mid-print, which is unreliable
+    // across browsers when combined with @media print + visibility tricks.
+    const html = `
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Receipt ${r.order_id.slice(0, 8).toUpperCase()}</title>
+<style>
+  * { box-sizing: border-box; }
+  body {
+    font-family: 'Courier New', monospace;
+    color: #1c1b19;
+    max-width: 480px;
+    margin: 24px auto;
+    padding: 0 16px;
+    font-size: 13px;
+    line-height: 1.5;
+  }
+  .header { display: flex; justify-content: space-between; align-items: flex-start;
+    border-bottom: 2px solid #1c1b19; padding-bottom: 12px; margin-bottom: 16px; }
+  .brand { font-weight: bold; font-size: 15px; letter-spacing: 0.5px; }
+  .sub { font-size: 11px; color: #4a4741; }
+  .tag { font-size: 10px; letter-spacing: 0.05em; text-transform: uppercase; color: #4a4741; margin-bottom: 2px; }
+  .grid { display: flex; justify-content: space-between; margin-bottom: 16px; }
+  .row { display: flex; justify-content: space-between; padding: 2px 0; }
+  .divider { border-top: 1px solid #d8d2c4; margin: 12px 0; }
+  .total-row { display: flex; justify-content: space-between; font-weight: bold; font-size: 15px;
+    border-top: 1px solid #1c1b19; padding-top: 8px; margin-top: 8px; }
+  .italic { font-style: italic; color: #4a4741; }
+  .footer { font-size: 10px; color: #4a4741; margin-top: 24px; padding-top: 12px; border-top: 1px solid #d8d2c4; }
+  @media print {
+    body { margin: 0 auto; }
+    @page { margin: 1.5cm; }
+  }
+</style>
+</head>
+<body>
+  <div class="header">
+    <div>
+      <div class="brand">PRESPRINT PLC</div>
+      <div class="sub">Limbe, Cameroon</div>
+    </div>
+    <div style="text-align:right">
+      <div class="tag">Receipt</div>
+      <div>#${r.order_id.slice(0, 8).toUpperCase()}</div>
+    </div>
+  </div>
+
+  <div class="grid">
+    <div>
+      <div class="tag">Client</div>
+      <div>${escapeHtml(r.client_name || "Walk-in client")}</div>
+      <div class="sub">${escapeHtml(r.client_contact || "")}</div>
+    </div>
+    <div style="text-align:right">
+      <div class="tag">Date</div>
+      <div>${new Date(r.created_at).toLocaleString()}</div>
+      <div class="tag" style="margin-top:6px">Status</div>
+      <div style="text-transform:uppercase">${escapeHtml(r.status)}</div>
+    </div>
+  </div>
+
+  <div class="tag">Order Request</div>
+  <div class="italic" style="margin-bottom:16px">${escapeHtml(r.raw_query || "(manually specified)")}</div>
+
+  <div class="divider"></div>
+  ${rows}
+  <div class="divider"></div>
+
+  <div class="row"><span>Subtotal</span><span>${fmtXAF(r.subtotal_xaf)}</span></div>
+  <div class="row"><span>Discount</span><span>− ${fmtXAF(r.discount_xaf)}</span></div>
+  <div class="row"><span>Rush fee</span><span>${fmtXAF(r.rush_fee_xaf)}</span></div>
+  <div class="row"><span>Tax</span><span>${fmtXAF(r.tax_xaf)}</span></div>
+  <div class="total-row"><span>Total</span><span>${fmtXAF(r.total_xaf)}</span></div>
+
+  <div class="footer">
+    Thank you for your order. This receipt confirms your order has been received and is pending production.
+  </div>
+</body>
+</html>`;
+
+    const printWindow = window.open('', '_blank', 'width=600,height=800');
+    if (!printWindow) {
+      alert("Pop-up blocked — please allow pop-ups for this site to print the receipt.");
+      return;
+    }
+    printWindow.document.open();
+    printWindow.document.write(html);
+    printWindow.document.close();
+
+    // Wait for the new document to finish laying out before invoking print,
+    // otherwise some browsers print a blank page.
+    printWindow.onload = () => {
+      printWindow.focus();
+      printWindow.print();
+    };
+  }
+
+  function escapeHtml(str) {
+    const div = document.createElement('div');
+    div.textContent = str ?? "";
+    return div.innerHTML;
+  }
+
+  els.printReceiptBtn.addEventListener('click', printReceipt);
 
   els.input.addEventListener('keydown', (e) => {
     if (e.key === 'Enter') els.extractBtn.click();

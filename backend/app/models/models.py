@@ -60,6 +60,10 @@ class Quote(Base):
     confidence_score: Mapped[float] = mapped_column(Float, default=0.0)
 
     breakdown: Mapped[dict] = mapped_column(JSON, nullable=False)   # itemized cost breakdown
+    subtotal_xaf: Mapped[float] = mapped_column(Float, default=0.0)
+    discount_xaf: Mapped[float] = mapped_column(Float, default=0.0)
+    rush_fee_xaf: Mapped[float] = mapped_column(Float, default=0.0)
+    tax_xaf: Mapped[float] = mapped_column(Float, default=0.0)
     total_xaf: Mapped[float] = mapped_column(Float, nullable=False)
 
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)

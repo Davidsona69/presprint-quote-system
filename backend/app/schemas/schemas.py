@@ -67,3 +67,22 @@ class OrderResponse(BaseModel):
     created_at: datetime
 
     model_config = ConfigDict(from_attributes=True)
+
+
+class OrderReceiptResponse(BaseModel):
+    """Order + its underlying quote, flattened — everything a printable receipt needs."""
+    order_id: str
+    status: str
+    created_at: datetime
+
+    client_name: str | None
+    client_contact: str | None
+
+    quote_id: str
+    raw_query: str | None
+    breakdown: list[CostLineItem]
+    subtotal_xaf: float
+    discount_xaf: float
+    rush_fee_xaf: float
+    tax_xaf: float
+    total_xaf: float

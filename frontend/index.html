@@ -3,221 +3,506 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Presprint — Quote Engine</title>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/3.4.1/tailwind.min.js"></script>
+<title>Presprint — Instant Quote</title>
+<script src="https://cdn.tailwindcss.com"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
   :root {
-    --paper: #f6f3ee;
-    --ink: #1c1b19;
-    --ink-soft: #4a4741;
-    --press-orange: #e8571c;
-    --registration-cyan: #0a7d8c;
-    --line: #d8d2c4;
+    --paper: #F5F6F8;
+    --surface: #FFFFFF;
+    --ink: #12141C;
+    --ink-soft: #5B6072;
+    --ink-faint: #9298A8;
+    --line: #E4E6EC;
+    --line-strong: #CDD1DC;
+    --cyan: #00AEEF;
+    --magenta: #EC008C;
+    --yellow: #FFC700;
+    --key: #12141C;
+    --success: #16A34A;
+    --danger: #DC2626;
   }
-  * { font-family: 'Space Grotesk', sans-serif; }
-  .mono { font-family: 'JetBrains Mono', monospace; }
+
+  * { font-family: 'IBM Plex Sans', sans-serif; }
+  .display { font-family: 'Space Grotesk', sans-serif; }
+  .mono { font-family: 'IBM Plex Mono', monospace; }
+
   body { background: var(--paper); color: var(--ink); }
 
-  /* Registration mark — the signature element, echoing print-shop crop/reg marks */
-  .reg-mark { position: relative; width: 18px; height: 18px; }
-  .reg-mark::before, .reg-mark::after {
-    content: ''; position: absolute; background: currentColor;
-  }
-  .reg-mark::before { top: 50%; left: 0; width: 100%; height: 1px; transform: translateY(-50%); }
-  .reg-mark::after { left: 50%; top: 0; height: 100%; width: 1px; transform: translateX(-50%); }
-  .reg-mark-circle { position: absolute; top: 50%; left: 50%; width: 8px; height: 8px;
-    border: 1px solid currentColor; border-radius: 50%; transform: translate(-50%, -50%); }
+  ::selection { background: var(--cyan); color: white; }
 
-  .card { background: #fff; border: 1px solid var(--line); }
-  .press-btn {
-    background: var(--ink); color: var(--paper);
-    transition: transform 0.12s ease, background 0.12s ease;
+  :focus-visible {
+    outline: 2px solid var(--cyan);
+    outline-offset: 2px;
+    border-radius: 2px;
   }
-  .press-btn:hover { background: var(--press-orange); }
-  .press-btn:active { transform: scale(0.98); }
 
-  .field-tag {
-    font-size: 0.68rem; letter-spacing: 0.06em; text-transform: uppercase;
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+
+  /* ---------- Registration mark: signature brand + loader element ---------- */
+  .reg-mark {
+    position: relative;
+    width: 28px;
+    height: 28px;
+    flex-shrink: 0;
+  }
+  .reg-mark .dot {
+    position: absolute;
+    width: 13px;
+    height: 13px;
+    border-radius: 50%;
+    mix-blend-mode: multiply;
+    transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  .reg-mark .dot.c { background: var(--cyan); top: 1px; left: 1px; }
+  .reg-mark .dot.m { background: var(--magenta); top: 1px; right: 1px; }
+  .reg-mark .dot.y { background: var(--yellow); bottom: 1px; left: 1px; }
+  .reg-mark .dot.k { background: var(--key); bottom: 1px; right: 1px; }
+  .reg-mark.aligned .dot { transform: translate(0, 0); }
+  .reg-mark:not(.aligned) .dot.c { transform: translate(-2px, -1px); }
+  .reg-mark:not(.aligned) .dot.m { transform: translate(2px, -1px); }
+  .reg-mark:not(.aligned) .dot.y { transform: translate(-2px, 1px); }
+  .reg-mark:not(.aligned) .dot.k { transform: translate(2px, 1px); }
+
+  .reg-mark.spin .dot {
+    animation: reg-pulse 1.1s ease-in-out infinite;
+  }
+  .reg-mark.spin .dot.c { animation-delay: 0s; }
+  .reg-mark.spin .dot.m { animation-delay: 0.1s; }
+  .reg-mark.spin .dot.y { animation-delay: 0.2s; }
+  .reg-mark.spin .dot.k { animation-delay: 0.3s; }
+  @keyframes reg-pulse {
+    0%, 100% { transform: translate(var(--rx, 0), var(--ry, 0)) scale(1); }
+    50% { transform: translate(0, 0) scale(0.85); }
+  }
+  .reg-mark.spin .dot.c { --rx: -2px; --ry: -1px; }
+  .reg-mark.spin .dot.m { --rx: 2px; --ry: -1px; }
+  .reg-mark.spin .dot.y { --rx: -2px; --ry: 1px; }
+  .reg-mark.spin .dot.k { --rx: 2px; --ry: 1px; }
+
+  /* ---------- Cards & surfaces ---------- */
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 16px;
+    box-shadow: 0 1px 2px rgba(18, 20, 28, 0.04), 0 8px 24px -12px rgba(18, 20, 28, 0.08);
+  }
+
+  .field-label {
+    font-size: 0.7rem;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
     color: var(--ink-soft);
+    display: block;
+    margin-bottom: 6px;
   }
 
-  .confidence-bar { height: 3px; background: var(--line); overflow: hidden; }
-  .confidence-fill { height: 100%; background: var(--registration-cyan); transition: width 0.4s ease; }
+  .field-input {
+    width: 100%;
+    background: var(--surface);
+    border: 1.5px solid var(--line);
+    border-radius: 10px;
+    padding: 10px 14px;
+    font-size: 0.9rem;
+    color: var(--ink);
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  }
+  .field-input:hover { border-color: var(--line-strong); }
+  .field-input:focus {
+    outline: none;
+    border-color: var(--cyan);
+    box-shadow: 0 0 0 3px rgba(0, 174, 239, 0.14);
+  }
+  .field-input::placeholder { color: var(--ink-faint); }
 
-  ::selection { background: var(--press-orange); color: white; }
+  /* ---------- Buttons ---------- */
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    font-weight: 600;
+    font-size: 0.9rem;
+    border-radius: 10px;
+    padding: 12px 20px;
+    transition: transform 0.12s ease, box-shadow 0.15s ease, background 0.15s ease, opacity 0.15s ease;
+    cursor: pointer;
+  }
+  .btn:active { transform: scale(0.98); }
+  .btn:disabled { opacity: 0.55; cursor: not-allowed; transform: none; }
+
+  .btn-primary {
+    background: var(--ink);
+    color: white;
+    box-shadow: 0 1px 2px rgba(18,20,28,0.1);
+  }
+  .btn-primary:hover:not(:disabled) { background: #262A38; box-shadow: 0 4px 14px -4px rgba(18,20,28,0.35); }
+
+  .btn-accent {
+    background: linear-gradient(135deg, var(--cyan), #0091C7);
+    color: white;
+  }
+  .btn-accent:hover:not(:disabled) { box-shadow: 0 4px 16px -4px rgba(0,174,239,0.5); }
+
+  .btn-success {
+    background: linear-gradient(135deg, #22C55E, var(--success));
+    color: white;
+  }
+  .btn-success:hover:not(:disabled) { box-shadow: 0 4px 16px -4px rgba(22,163,74,0.5); }
+
+  .btn-ghost {
+    background: transparent;
+    color: var(--ink-soft);
+    border: 1.5px solid var(--line);
+  }
+  .btn-ghost:hover:not(:disabled) { border-color: var(--line-strong); background: var(--paper); color: var(--ink); }
+
+  /* ---------- Step nav ---------- */
+  .step-nav-btn {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px 8px 8px;
+    border-radius: 999px;
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: var(--ink-faint);
+    background: transparent;
+    border: 1.5px solid transparent;
+    transition: all 0.15s ease;
+    white-space: nowrap;
+  }
+  .step-nav-btn .num {
+    width: 22px; height: 22px;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 0.7rem;
+    background: var(--line);
+    color: var(--ink-faint);
+    flex-shrink: 0;
+    transition: all 0.15s ease;
+  }
+  .step-nav-btn.done { color: var(--ink); cursor: pointer; }
+  .step-nav-btn.done .num { background: var(--ink); color: white; }
+  .step-nav-btn.done:hover { background: var(--paper); border-color: var(--line); }
+  .step-nav-btn.active { color: var(--ink); background: var(--surface); border-color: var(--line-strong);
+    box-shadow: 0 1px 3px rgba(18,20,28,0.08); }
+  .step-nav-btn.active .num { background: var(--cyan); color: white; }
+  .step-nav-btn:disabled { cursor: not-allowed; }
+
+  /* ---------- Section transitions ---------- */
+  .step-section {
+    animation: rise 0.45s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  @keyframes rise {
+    from { opacity: 0; transform: translateY(14px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  /* ---------- Accordion ---------- */
+  .accordion-panel {
+    display: grid;
+    grid-template-rows: 0fr;
+    transition: grid-template-rows 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  .accordion-panel.open { grid-template-rows: 1fr; }
+  .accordion-panel > div { overflow: hidden; }
+  .accordion-chevron { transition: transform 0.25s ease; }
+  .accordion-chevron.open { transform: rotate(180deg); }
+
+  /* ---------- Modal ---------- */
+  .modal-backdrop {
+    background: rgba(18, 20, 28, 0.45);
+    backdrop-filter: blur(3px);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s ease;
+  }
+  .modal-backdrop.open { opacity: 1; pointer-events: auto; }
+  .modal-panel {
+    transform: scale(0.96) translateY(8px);
+    opacity: 0;
+    transition: transform 0.22s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.2s ease;
+  }
+  .modal-backdrop.open .modal-panel { transform: scale(1) translateY(0); opacity: 1; }
+
+  /* ---------- Misc ---------- */
+  .status-pill {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-size: 0.72rem; font-weight: 500; color: var(--ink-soft);
+    background: var(--surface); border: 1px solid var(--line);
+    padding: 5px 10px 5px 8px; border-radius: 999px;
+  }
+  .status-dot { width: 7px; height: 7px; border-radius: 50%; }
+  .status-connected { background: #22C55E; box-shadow: 0 0 0 3px rgba(34,197,94,0.18); }
+  .status-offline { background: #EF4444; box-shadow: 0 0 0 3px rgba(239,68,68,0.18); }
+
+  .feature-card {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    padding: 16px;
+    transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
+  }
+  .feature-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 24px -12px rgba(18,20,28,0.16);
+    border-color: var(--line-strong);
+  }
+
+  .perforation {
+    background-image: radial-gradient(circle, var(--paper) 2.5px, transparent 2.5px);
+    background-size: 14px 14px;
+    background-position: center;
+    height: 6px;
+  }
+
+  select.field-input { appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='%235B6072' d='M1 1l5 5 5-5'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 14px center; padding-right: 36px; }
+
+  .confidence-track { height: 6px; background: var(--line); border-radius: 999px; overflow: hidden; }
+  .confidence-fill-bar { height: 100%; border-radius: 999px; transition: width 0.5s cubic-bezier(0.16,1,0.3,1), background 0.3s ease; }
 </style>
 </head>
 <body class="min-h-screen">
 
   <!-- Header -->
-  <header class="border-b border-[var(--line)] px-6 py-4 flex items-center justify-between">
-    <div class="flex items-center gap-3">
-      <div class="reg-mark text-[var(--press-orange)]"><div class="reg-mark-circle"></div></div>
-      <div>
-        <h1 class="font-semibold text-lg tracking-tight">PRESPRINT</h1>
-        <p class="text-xs mono text-[var(--ink-soft)] -mt-1">quote engine · rev.001</p>
+  <header class="sticky top-0 z-30 backdrop-blur-md bg-white/75 border-b border-[var(--line)]">
+    <div class="max-w-5xl mx-auto px-5 sm:px-8">
+      <div class="flex justify-between items-center py-3.5">
+        <div class="flex items-center gap-3">
+          <div class="reg-mark aligned" id="brand-mark">
+            <div class="dot c"></div><div class="dot m"></div><div class="dot y"></div><div class="dot k"></div>
+          </div>
+          <div>
+            <h1 class="display font-bold text-lg leading-none tracking-tight">Presprint</h1>
+            <p class="text-[10px] uppercase tracking-widest text-[var(--ink-faint)] mt-0.5">Instant Quote Engine</p>
+          </div>
+        </div>
+        <span class="status-pill" id="api-status">
+          <span class="status-dot"></span>Checking…
+        </span>
       </div>
     </div>
-    <span class="mono text-xs text-[var(--ink-soft)]" id="api-status">checking api…</span>
   </header>
 
-  <main class="max-w-3xl mx-auto px-6 py-10">
+  <main class="max-w-5xl mx-auto px-5 sm:px-8 pb-24">
 
-    <!-- Prompt input -->
-    <section class="mb-8">
-      <label class="field-tag block mb-2">Client Order Request</label>
-      <div class="card p-1 flex gap-2">
-        <input id="query-input" type="text"
-          placeholder="e.g. I need 500 copies of A4 glossy flyers, double-sided color, by Friday"
-          class="flex-1 px-4 py-3 outline-none text-sm bg-transparent"
-        />
-        <button id="extract-btn" class="press-btn px-5 py-3 text-sm font-medium">
-          Extract →
-        </button>
-      </div>
-      <p class="mono text-xs text-[var(--ink-soft)] mt-2">Plain text in. Structured spec out.</p>
-    </section>
-
-    <!-- Extracted spec cards -->
-    <section id="spec-section" class="mb-8 hidden">
-      <div class="flex items-center justify-between mb-3">
-        <label class="field-tag">Extracted Specification</label>
-        <div class="flex items-center gap-2">
-          <span class="mono text-xs text-[var(--ink-soft)]" id="confidence-label">—</span>
-          <div class="confidence-bar w-20"><div class="confidence-fill" id="confidence-fill" style="width:0%"></div></div>
-        </div>
-      </div>
-
-      <div class="card p-5 grid grid-cols-2 sm:grid-cols-3 gap-4" id="spec-grid">
-        <!-- populated by JS -->
-      </div>
-      <p id="low-confidence-warning" class="text-xs mono mt-2 hidden" style="color: var(--press-orange)">
-        ⚠ Low confidence — several fields weren't detected. Fill in the blanks above before calculating.
-      </p>
-
-      <button id="quote-btn" class="press-btn w-full mt-4 py-3 text-sm font-medium">
-        Calculate Quote →
+    <!-- Step nav -->
+    <nav class="flex items-center gap-1.5 overflow-x-auto py-5 -mx-1 px-1" id="step-nav" aria-label="Progress">
+      <button class="step-nav-btn active" id="nav-specify" data-target="specify">
+        <span class="num">1</span>Describe
       </button>
-    </section>
+      <div class="w-4 h-px bg-[var(--line)] flex-shrink-0"></div>
+      <button class="step-nav-btn" id="nav-review" data-target="review" disabled>
+        <span class="num">2</span>Review specs
+      </button>
+      <div class="w-4 h-px bg-[var(--line)] flex-shrink-0"></div>
+      <button class="step-nav-btn" id="nav-quote" data-target="quote" disabled>
+        <span class="num">3</span>Quote &amp; order
+      </button>
+      <div class="w-4 h-px bg-[var(--line)] flex-shrink-0"></div>
+      <button class="step-nav-btn" id="nav-receipt" data-target="receipt" disabled>
+        <span class="num">4</span>Receipt
+      </button>
+    </nav>
 
-    <!-- Quote breakdown -->
-    <section id="quote-section" class="hidden">
-      <label class="field-tag block mb-3">Quote Breakdown</label>
-      <div class="card p-5">
-        <div id="breakdown-list" class="space-y-2 mb-4 mono text-sm"></div>
-        <div class="border-t border-[var(--line)] pt-4 space-y-1 mono text-sm">
-          <div class="flex justify-between text-[var(--ink-soft)]"><span>Subtotal</span><span id="subtotal">—</span></div>
-          <div class="flex justify-between text-[var(--ink-soft)]"><span>Discount</span><span id="discount">—</span></div>
-          <div class="flex justify-between text-[var(--ink-soft)]"><span>Rush fee</span><span id="rushfee">—</span></div>
-          <div class="flex justify-between text-[var(--ink-soft)]"><span>Tax</span><span id="tax">—</span></div>
-          <div class="flex justify-between font-semibold text-base pt-2 border-t border-[var(--line)] mt-2">
-            <span>Total</span><span id="total" class="text-[var(--press-orange)]">—</span>
-          </div>
-        </div>
-      </div>
-    </section>
+    <!-- Step 1: Describe -->
+    <section id="step1-input" class="step-section">
+      <div class="grid lg:grid-cols-5 gap-6 items-start">
+        <!-- Left: input -->
+        <div class="lg:col-span-3 card p-6 sm:p-8">
+          <h2 class="display text-2xl sm:text-[28px] font-bold leading-tight">Describe your print job.<br><span class="text-[var(--ink-faint)]">Get an exact price back.</span></h2>
+          <p class="text-sm text-[var(--ink-soft)] mt-2.5">Write it the way you'd tell a staff member — quantity, size, finish, deadline. We'll extract the spec automatically.</p>
 
-    <!-- Place order -->
-    <section id="order-form-section" class="mt-8 hidden">
-      <label class="field-tag block mb-3">Place Order</label>
-      <div class="card p-5 space-y-3">
-        <div>
-          <div class="field-tag mb-1">Client Name</div>
-          <input id="client-name-input" type="text" placeholder="e.g. Ekema Print Supplies Ltd"
-            class="w-full border border-[var(--line)] px-3 py-2 text-sm outline-none focus:border-[var(--press-orange)]" />
-        </div>
-        <div>
-          <div class="field-tag mb-1">Contact (phone or email)</div>
-          <input id="client-contact-input" type="text" placeholder="e.g. 6xx xxx xxx"
-            class="w-full border border-[var(--line)] px-3 py-2 text-sm outline-none focus:border-[var(--press-orange)]" />
-        </div>
-        <button id="place-order-btn" class="press-btn w-full py-3 text-sm font-medium">
-          Place Order →
-        </button>
-      </div>
-    </section>
+          <label for="query-input" class="field-label mt-6">Print job request</label>
+          <textarea id="query-input" rows="4" class="field-input resize-none text-[15px]" placeholder="e.g. I need 500 A4 flyers, glossy paper, full color and double sided, ready by Friday"></textarea>
 
-    <!-- Receipt -->
-    <section id="receipt-section" class="mt-8 hidden">
-      <div class="flex items-center justify-between mb-3 no-print">
-        <label class="field-tag">Order Receipt</label>
-        <button id="print-receipt-btn" class="text-xs mono underline text-[var(--ink-soft)] hover:text-[var(--press-orange)]">
-          Print / Save as PDF
-        </button>
-      </div>
-      <div class="card p-6" id="receipt-card">
-        <div class="flex items-center justify-between mb-6 pb-4 border-b border-[var(--line)]">
-          <div class="flex items-center gap-3">
-            <div class="reg-mark text-[var(--press-orange)]"><div class="reg-mark-circle"></div></div>
-            <div>
-              <div class="font-semibold">PRESPRINT PLC</div>
-              <div class="text-xs mono text-[var(--ink-soft)]">Limbe, Cameroon</div>
+          <button id="extract-btn" class="btn btn-primary w-full mt-4">
+            <span class="btn-label">Analyze request</span>
+          </button>
+          <p id="error-message" class="text-[var(--danger)] mt-3 text-sm hidden"></p>
+          <p class="text-[11px] text-[var(--ink-faint)] mt-3">Tip: <kbd class="px-1.5 py-0.5 bg-[var(--paper)] border border-[var(--line)] rounded text-[10px] mono">Ctrl</kbd> + <kbd class="px-1.5 py-0.5 bg-[var(--paper)] border border-[var(--line)] rounded text-[10px] mono">Enter</kbd> to analyze</p>
+        </div>
+
+        <!-- Right: mark + features -->
+        <div class="lg:col-span-2 flex flex-col gap-4">
+          <div class="card p-8 flex items-center justify-center bg-gradient-to-br from-white to-[var(--paper)]">
+            <div class="reg-mark aligned scale-[2.4]" style="width:28px;height:28px;">
+              <div class="dot c"></div><div class="dot m"></div><div class="dot y"></div><div class="dot k"></div>
             </div>
           </div>
-          <div class="text-right">
-            <div class="field-tag">Receipt</div>
-            <div class="mono text-xs" id="receipt-order-id">—</div>
+          <div class="feature-card">
+            <div class="text-xs font-semibold text-[var(--ink-faint)] uppercase tracking-wide mono">01</div>
+            <div class="font-semibold text-sm mt-1">Priced to the plate</div>
+            <p class="text-xs text-[var(--ink-soft)] mt-1 leading-relaxed">Paper, ink, and finishing costed line by line — no flat guesses.</p>
+          </div>
+          <div class="feature-card">
+            <div class="text-xs font-semibold text-[var(--ink-faint)] uppercase tracking-wide mono">02</div>
+            <div class="font-semibold text-sm mt-1">You review before it's final</div>
+            <p class="text-xs text-[var(--ink-soft)] mt-1 leading-relaxed">Every extracted detail is editable before a quote is calculated.</p>
           </div>
         </div>
-
-        <div class="grid grid-cols-2 gap-4 mb-6 text-sm">
-          <div>
-            <div class="field-tag mb-1">Client</div>
-            <div id="receipt-client-name">—</div>
-            <div class="mono text-xs text-[var(--ink-soft)]" id="receipt-client-contact"></div>
-          </div>
-          <div class="text-right">
-            <div class="field-tag mb-1">Date</div>
-            <div class="mono text-sm" id="receipt-date">—</div>
-            <div class="field-tag mt-2 mb-1">Status</div>
-            <div class="mono text-xs uppercase" id="receipt-status">—</div>
-          </div>
-        </div>
-
-        <div class="mb-4 text-sm">
-          <div class="field-tag mb-1">Order Request</div>
-          <div class="italic text-[var(--ink-soft)]" id="receipt-raw-query">—</div>
-        </div>
-
-        <div id="receipt-breakdown" class="space-y-2 mb-4 mono text-sm border-t border-[var(--line)] pt-4"></div>
-
-        <div class="space-y-1 mono text-sm border-t border-[var(--line)] pt-4">
-          <div class="flex justify-between text-[var(--ink-soft)]"><span>Subtotal</span><span id="receipt-subtotal">—</span></div>
-          <div class="flex justify-between text-[var(--ink-soft)]"><span>Discount</span><span id="receipt-discount">—</span></div>
-          <div class="flex justify-between text-[var(--ink-soft)]"><span>Rush fee</span><span id="receipt-rushfee">—</span></div>
-          <div class="flex justify-between text-[var(--ink-soft)]"><span>Tax</span><span id="receipt-tax">—</span></div>
-          <div class="flex justify-between font-semibold text-base pt-2 border-t border-[var(--line)] mt-2">
-            <span>Total</span><span id="receipt-total" class="text-[var(--press-orange)]">—</span>
-          </div>
-        </div>
-
-        <p class="text-xs mono text-[var(--ink-soft)] mt-6 pt-4 border-t border-[var(--line)]">
-          Thank you for your order. This receipt confirms your order has been received and is pending production.
-        </p>
       </div>
+    </section>
+
+    <!-- Step 2: Review specs -->
+    <section id="spec-section" class="step-section card p-6 sm:p-8 hidden">
+      <div class="flex flex-wrap justify-between items-center gap-3 mb-1">
+        <h3 class="display text-xl font-bold">Confirm the details</h3>
+        <div class="flex items-center gap-2.5">
+          <span id="confidence-label" class="text-xs mono text-[var(--ink-soft)]">—</span>
+          <div class="confidence-track w-24">
+            <div id="confidence-fill" class="confidence-fill-bar" style="width:0%; background: var(--cyan);"></div>
+          </div>
+        </div>
+      </div>
+      <p class="text-sm text-[var(--ink-soft)] mb-5">Edit anything that looks off — this is what the quote gets calculated from.</p>
+
+      <p id="low-confidence-warning" class="mb-5 p-3.5 bg-amber-50 border border-amber-200 text-amber-800 rounded-xl text-sm hidden">
+        <strong>Heads up —</strong> a few fields weren't detected confidently. Please review and fill them in below.
+      </p>
+
+      <div class="grid grid-cols-2 sm:grid-cols-3 gap-4" id="spec-grid"></div>
+
+      <div class="flex flex-col sm:flex-row gap-3 mt-7">
+        <button id="back-to-describe-btn" class="btn btn-ghost sm:w-auto" type="button">← Edit request</button>
+        <button id="quote-btn" class="btn btn-accent flex-1">
+          <span class="btn-label">Calculate quote</span>
+        </button>
+      </div>
+    </section>
+
+    <!-- Step 3: Quote + Order (shown together, as before) -->
+    <div id="quote-order-wrap" class="hidden space-y-6">
+      <section id="quote-section" class="step-section card p-6 sm:p-8 hidden">
+        <div class="flex items-center justify-between mb-5">
+          <h3 class="display text-xl font-bold">Your quote</h3>
+          <span class="text-[11px] mono text-[var(--ink-faint)] uppercase tracking-wide">Itemized</span>
+        </div>
+
+        <div id="breakdown-list" class="space-y-2.5 text-sm text-[var(--ink-soft)]"></div>
+
+        <div class="border-t border-[var(--line)] mt-5 pt-5 space-y-2 text-sm">
+          <div class="flex justify-between"><span class="text-[var(--ink-soft)]">Subtotal</span><span id="subtotal" class="mono font-medium"></span></div>
+          <div class="flex justify-between"><span class="text-[var(--success)]">Discount</span><span id="discount" class="mono font-medium text-[var(--success)]"></span></div>
+          <div class="flex justify-between"><span class="text-[var(--ink-soft)]">Rush fee</span><span id="rushfee" class="mono font-medium"></span></div>
+          <div class="flex justify-between"><span class="text-[var(--ink-soft)]">Tax</span><span id="tax" class="mono font-medium"></span></div>
+        </div>
+        <div class="flex justify-between items-end border-t border-[var(--line)] mt-4 pt-4">
+          <span class="display font-semibold text-lg">Total</span>
+          <span id="total" class="display font-bold text-3xl text-[var(--cyan)]"></span>
+        </div>
+
+        <!-- Accordion: how pricing works -->
+        <div class="mt-6 border border-[var(--line)] rounded-xl overflow-hidden">
+          <button id="accordion-toggle-pricing" class="w-full flex items-center justify-between px-4 py-3 text-sm font-medium hover:bg-[var(--paper)] transition-colors" type="button" aria-expanded="false">
+            <span>How this price was built</span>
+            <svg class="accordion-chevron w-4 h-4 text-[var(--ink-faint)]" viewBox="0 0 12 8" fill="none"><path d="M1 1l5 5 5-5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
+          <div class="accordion-panel" id="accordion-panel-pricing">
+            <div>
+              <div class="px-4 pb-4 pt-1 text-xs text-[var(--ink-soft)] space-y-2 leading-relaxed border-t border-[var(--line)]">
+                <p><strong class="text-[var(--ink)]">Subtotal</strong> — paper, ink, and any finishing (lamination, binding, etc.), each costed by quantity.</p>
+                <p><strong class="text-[var(--ink)]">Discount</strong> — automatic volume tiers reward larger orders.</p>
+                <p><strong class="text-[var(--ink)]">Rush fee</strong> — applied only when your request implies a tight deadline.</p>
+                <p><strong class="text-[var(--ink)]">Tax</strong> — standard rate applied to the discounted, rush-adjusted subtotal.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Order form -->
+      <section id="order-form-section" class="step-section card p-6 sm:p-8 hidden">
+        <h3 class="display text-xl font-bold">Client details</h3>
+        <p class="text-sm text-[var(--ink-soft)] mt-1">Optional — helps production staff reach the client.</p>
+        <div class="mt-5 space-y-4">
+          <div>
+            <label for="client-name-input" class="field-label">Client name</label>
+            <input id="client-name-input" type="text" placeholder="e.g. Ekema Print Supplies Ltd" class="field-input" />
+          </div>
+          <div>
+            <label for="client-contact-input" class="field-label">Contact — phone or email</label>
+            <input id="client-contact-input" type="text" placeholder="e.g. 6xx xxx xxx" class="field-input" />
+          </div>
+          <button id="place-order-btn" class="btn btn-success w-full">
+            <span class="btn-label">Review &amp; place order</span>
+          </button>
+        </div>
+      </section>
+    </div>
+
+    <!-- Step 4: Receipt -->
+    <section id="receipt-section" class="step-section card overflow-hidden hidden">
+      <div class="p-8 sm:p-10 text-center">
+        <div class="w-14 h-14 bg-green-50 border border-green-200 rounded-full flex items-center justify-center mx-auto">
+          <svg class="w-7 h-7 text-[var(--success)]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>
+        </div>
+        <h3 class="display text-2xl font-bold mt-4">Order placed</h3>
+        <p class="text-[var(--ink-soft)] mt-2 text-sm">Your order has been received. Reference <strong id="receipt-order-id" class="mono text-[var(--ink)]"></strong>.</p>
+        <div class="mt-7 flex flex-col sm:flex-row gap-3 justify-center">
+          <button id="print-receipt-btn" class="btn btn-primary">Print receipt</button>
+          <button id="new-quote-btn" class="btn btn-ghost">Start new quote</button>
+        </div>
+      </div>
+      <div class="perforation border-t border-dashed border-[var(--line)]"></div>
+      <div class="p-6 text-center text-[11px] text-[var(--ink-faint)] mono">PRESPRINT PLC · LIMBE, CAMEROON</div>
     </section>
 
   </main>
 
-  <footer class="max-w-3xl mx-auto px-6 py-6 mono text-xs text-[var(--ink-soft)]">
-    Presprint PLC · Automated Quote Engine · Internal Tool
+  <!-- Order confirmation modal -->
+  <div class="modal-backdrop fixed inset-0 z-40 flex items-center justify-center p-4" id="confirm-modal">
+    <div class="modal-panel card w-full max-w-md p-6 sm:p-7">
+      <h3 class="display text-lg font-bold">Confirm this order?</h3>
+      <p class="text-sm text-[var(--ink-soft)] mt-1.5">Double-check before it's sent to production.</p>
+      <div class="mt-5 space-y-2.5 text-sm border-t border-b border-[var(--line)] py-4">
+        <div class="flex justify-between"><span class="text-[var(--ink-soft)]">Client</span><span id="confirm-modal-client" class="font-medium text-right">—</span></div>
+        <div class="flex justify-between"><span class="text-[var(--ink-soft)]">Contact</span><span id="confirm-modal-contact" class="font-medium text-right">—</span></div>
+        <div class="flex justify-between"><span class="text-[var(--ink-soft)]">Total</span><span id="confirm-modal-total" class="font-bold mono text-[var(--cyan)]">—</span></div>
+      </div>
+      <div class="flex gap-3 mt-5">
+        <button id="confirm-modal-cancel" class="btn btn-ghost flex-1" type="button">Cancel</button>
+        <button id="confirm-modal-confirm" class="btn btn-success flex-1" type="button">
+          <span class="btn-label">Confirm &amp; submit</span>
+        </button>
+      </div>
+      <p id="confirm-modal-error" class="text-[var(--danger)] mt-3 text-xs hidden"></p>
+    </div>
+  </div>
+
+  <footer class="border-t border-[var(--line)] bg-white/50">
+    <div class="max-w-5xl mx-auto px-5 sm:px-8 py-6 text-center text-xs text-[var(--ink-faint)]">
+      <p>&copy; <span id="footer-year"></span> Presprint PLC. All rights reserved.</p>
+    </div>
   </footer>
 
 <script>
   // Point this at your backend. Via docker-compose it's exposed on :8000,
   // or proxied under /api/ once nginx-proxy is in front (Week 7).
-  const API_BASE = "http://localhost:8000";
+  const API_BASE = "http://localhost:8000"; // Keep this as is for local dev
 
   const els = {
     input: document.getElementById('query-input'),
     extractBtn: document.getElementById('extract-btn'),
+    errorMessage: document.getElementById('error-message'),
+    step1Input: document.getElementById('step1-input'),
     specSection: document.getElementById('spec-section'),
     specGrid: document.getElementById('spec-grid'),
     confidenceLabel: document.getElementById('confidence-label'),
     confidenceFill: document.getElementById('confidence-fill'),
+    lowConfidenceWarning: document.getElementById('low-confidence-warning'),
     quoteBtn: document.getElementById('quote-btn'),
+    quoteOrderWrap: document.getElementById('quote-order-wrap'),
     quoteSection: document.getElementById('quote-section'),
     breakdownList: document.getElementById('breakdown-list'),
     subtotal: document.getElementById('subtotal'),
@@ -231,122 +516,237 @@
     clientContactInput: document.getElementById('client-contact-input'),
     placeOrderBtn: document.getElementById('place-order-btn'),
     receiptSection: document.getElementById('receipt-section'),
+    receiptOrderId: document.getElementById('receipt-order-id'),
     printReceiptBtn: document.getElementById('print-receipt-btn'),
+    newQuoteBtn: document.getElementById('new-quote-btn'),
+    backToDescribeBtn: document.getElementById('back-to-describe-btn'),
+    brandMark: document.getElementById('brand-mark'),
+    accordionToggle: document.getElementById('accordion-toggle-pricing'),
+    accordionPanel: document.getElementById('accordion-panel-pricing'),
+    confirmModal: document.getElementById('confirm-modal'),
+    confirmModalClient: document.getElementById('confirm-modal-client'),
+    confirmModalContact: document.getElementById('confirm-modal-contact'),
+    confirmModalTotal: document.getElementById('confirm-modal-total'),
+    confirmModalCancel: document.getElementById('confirm-modal-cancel'),
+    confirmModalConfirm: document.getElementById('confirm-modal-confirm'),
+    confirmModalError: document.getElementById('confirm-modal-error'),
   };
 
   let currentEntities = null;
   let currentConfidence = 0;
   let currentQuery = "";
   let currentQuoteId = null;
+  let currentQuoteTotal = 0;
   let currentReceipt = null;
 
-  const fmtXAF = (n) => `${Number(n).toLocaleString()} XAF`;
+  const fmtXAF = (n) => `${Number(n).toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })} XAF`;
 
   const FIELD_LABELS = {
     item_type: "Item", quantity: "Quantity", paper_size: "Size",
     paper_finish: "Finish", print_side: "Sides", color_mode: "Color", urgency: "Urgency",
   };
 
+  // ---------- Loading / button states (registration-mark loader) ----------
+  function showLoading(button, text) {
+    button.disabled = true;
+    button.innerHTML = `
+      <span class="reg-mark spin" style="width:16px;height:16px;">
+        <span class="dot c" style="width:7px;height:7px;"></span><span class="dot m" style="width:7px;height:7px;"></span><span class="dot y" style="width:7px;height:7px;"></span><span class="dot k" style="width:7px;height:7px;"></span>
+      </span>
+      ${text}…
+    `;
+  }
+  function hideLoading(button, originalText) {
+    button.disabled = false;
+    button.innerHTML = `<span class="btn-label">${originalText}</span>`;
+  }
+
+  function showError(message) {
+    els.errorMessage.textContent = message;
+    els.errorMessage.classList.remove('hidden');
+  }
+
+  // ---------- Step navigation ----------
+  const stepNav = {
+    specify: document.getElementById('nav-specify'),
+    review: document.getElementById('nav-review'),
+    quote: document.getElementById('nav-quote'),
+    receipt: document.getElementById('nav-receipt'),
+  };
+  const stepUnlocked = { specify: true, review: false, quote: false, receipt: false };
+
+  function updateStepNavUI(active) {
+    for (const key of Object.keys(stepNav)) {
+      const btn = stepNav[key];
+      btn.classList.toggle('active', key === active);
+      btn.classList.toggle('done', stepUnlocked[key] && key !== active);
+      btn.disabled = !stepUnlocked[key];
+    }
+  }
+
+  function showStep(step) {
+    els.step1Input.classList.toggle('hidden', step !== 'specify');
+    els.specSection.classList.toggle('hidden', step !== 'review');
+    els.quoteOrderWrap.classList.toggle('hidden', step !== 'quote');
+    if (step === 'quote') {
+      els.quoteSection.classList.remove('hidden');
+      els.orderFormSection.classList.remove('hidden');
+    }
+    els.receiptSection.classList.toggle('hidden', step !== 'receipt');
+    updateStepNavUI(step);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  Object.entries(stepNav).forEach(([key, btn]) => {
+    btn.addEventListener('click', () => {
+      if (stepUnlocked[key]) showStep(key);
+    });
+  });
+
+  els.backToDescribeBtn.addEventListener('click', () => showStep('specify'));
+
+  function resetUI() {
+    els.input.value = '';
+    els.errorMessage.classList.add('hidden');
+    currentQuoteId = null;
+    currentReceipt = null;
+    stepUnlocked.review = false;
+    stepUnlocked.quote = false;
+    stepUnlocked.receipt = false;
+    showStep('specify');
+  }
+
+  // ---------- API status ----------
   async function checkHealth() {
     try {
       const res = await fetch(`${API_BASE}/health`);
-      if (res.ok) { els.apiStatus.textContent = "● api connected"; els.apiStatus.style.color = "#0a7d8c"; }
-      else throw new Error();
+      if (res.ok) {
+        els.apiStatus.innerHTML = `<span class="status-dot status-connected"></span>API connected`;
+        els.brandMark.classList.add('aligned');
+      } else throw new Error();
     } catch {
-      els.apiStatus.textContent = "● api offline (start backend)"; els.apiStatus.style.color = "#e8571c";
+      els.apiStatus.innerHTML = `<span class="status-dot status-offline"></span>API offline`;
+      els.brandMark.classList.remove('aligned');
     }
   }
   checkHealth();
+  setInterval(checkHealth, 30000);
+  document.getElementById('footer-year').textContent = new Date().getFullYear();
 
+  // ---------- Spec grid ----------
   function renderSpecGrid(entities) {
     els.specGrid.innerHTML = "";
     for (const [key, label] of Object.entries(FIELD_LABELS)) {
       const val = entities[key];
       const div = document.createElement('div');
-      div.innerHTML = `
-        <div class="field-tag mb-1">${label}</div>
-        <input data-field="${key}" value="${val ?? ''}" placeholder="not detected"
-          class="w-full border border-[var(--line)] px-2 py-1.5 text-sm mono outline-none focus:border-[var(--press-orange)] placeholder:text-[var(--line)]" />
-      `;
+      if (key === 'print_side' || key === 'color_mode' || key === 'urgency') {
+        const options = {
+          print_side: [{v: 'single', t: 'Single-sided'}, {v: 'double', t: 'Double-sided'}],
+          color_mode: [{v: 'full_color', t: 'Full Color'}, {v: 'black_white', t: 'Black & White'}],
+          urgency: [{v: 'standard', t: 'Standard'}, {v: 'high', t: 'High (Rush)'}],
+        };
+        const notDetected = val === null || val === undefined || val === '';
+        const placeholderOpt = notDetected ? `<option value="" selected>— Not detected —</option>` : '';
+        const selectOptions = options[key].map(o => `<option value="${o.v}" ${val === o.v ? 'selected' : ''}>${o.t}</option>`).join('');
+        div.innerHTML = `
+          <div>
+            <label class="field-label">${label}</label>
+            <select data-field="${key}" class="field-input">${placeholderOpt}${selectOptions}</select>
+          </div>
+        `;
+      } else {
+        div.innerHTML = `
+          <div>
+            <label class="field-label">${label}</label>
+            <input data-field="${key}" value="${val ?? ''}" placeholder="Not detected" class="field-input" />
+          </div>
+        `;
+      }
       els.specGrid.appendChild(div);
     }
     if (entities.finishing && entities.finishing.length) {
       const div = document.createElement('div');
       div.className = "col-span-2 sm:col-span-3";
       div.innerHTML = `
-        <div class="field-tag mb-1">Finishing</div>
-        <div class="text-sm mono">${entities.finishing.join(", ")}</div>
+        <label class="field-label">Finishing</label>
+        <div class="px-3 py-2.5 bg-[var(--paper)] border border-[var(--line)] rounded-lg text-sm">${entities.finishing.join(", ")}</div>
       `;
       els.specGrid.appendChild(div);
     }
   }
 
   function readSpecGridOverrides() {
-    const inputs = els.specGrid.querySelectorAll('[data-field]');
+    const inputs = els.specGrid.querySelectorAll('input[data-field], select[data-field]');
     const out = { ...currentEntities };
     inputs.forEach(inp => {
       const key = inp.dataset.field;
       let val = inp.value.trim();
       if (val === "") val = null;
-      if (key === "quantity" && val) val = parseInt(val, 10);
+      if (key === "quantity" && val) val = parseInt(val.replace(/,/g, ''), 10) || null;
       out[key] = val;
     });
     return out;
   }
 
+  // ---------- Extract ----------
   els.extractBtn.addEventListener('click', async () => {
     const query = els.input.value.trim();
-    if (!query) return;
+    if (!query) {
+      showError("Please describe your print job first.");
+      return;
+    }
+    els.errorMessage.classList.add('hidden');
     currentQuery = query;
-    els.extractBtn.disabled = true;
-    els.extractBtn.textContent = "Extracting…";
+    showLoading(els.extractBtn, 'Analyzing');
 
     try {
       const res = await fetch(`${API_BASE}/extract-specs`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ query }),
+        body: JSON.stringify({ query: query }),
       });
+      if (!res.ok) throw new Error(`Server error: ${res.statusText}`);
       const data = await res.json();
-      currentEntities = data.extracted_entities;
-      currentConfidence = data.confidence_score;
+      currentEntities = data.extracted_entities || {};
+      currentConfidence = data.confidence_score || 0;
 
       renderSpecGrid(currentEntities);
-      els.confidenceLabel.textContent = `confidence ${(currentConfidence * 100).toFixed(0)}%`;
+      els.confidenceLabel.textContent = `${(currentConfidence * 100).toFixed(0)}% confidence`;
       els.confidenceFill.style.width = `${currentConfidence * 100}%`;
-      els.confidenceFill.style.background = data.needs_confirmation ? '#e8571c' : '#0a7d8c';
-      document.getElementById('low-confidence-warning').classList.toggle('hidden', !data.needs_confirmation);
+      els.confidenceFill.style.background = data.needs_confirmation ? 'var(--yellow)' : 'var(--cyan)';
+      els.lowConfidenceWarning.classList.toggle('hidden', !data.needs_confirmation);
 
-      els.specSection.classList.remove('hidden');
-      els.quoteSection.classList.add('hidden');
-      els.orderFormSection.classList.add('hidden');
-      els.receiptSection.classList.add('hidden');
       currentQuoteId = null;
+      stepUnlocked.review = true;
+      stepUnlocked.quote = false;
+      stepUnlocked.receipt = false;
+      showStep('review');
     } catch (e) {
-      alert("Could not reach the backend. Is it running? (see README)");
+      showError(`Analysis failed: ${e.message}. Please check the API connection.`);
     } finally {
-      els.extractBtn.disabled = false;
-      els.extractBtn.textContent = "Extract →";
+      hideLoading(els.extractBtn, 'Analyze request');
     }
   });
 
+  // ---------- Calculate quote ----------
   els.quoteBtn.addEventListener('click', async () => {
     const entities = readSpecGridOverrides();
-    els.quoteBtn.disabled = true;
-    els.quoteBtn.textContent = "Calculating…";
+    showLoading(els.quoteBtn, 'Calculating');
 
     try {
       const res = await fetch(`${API_BASE}/calculate-quote`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ entities, raw_query: currentQuery, confidence_score: currentConfidence }),
+        body: JSON.stringify({ entities: entities }),
       });
+      if (!res.ok) throw new Error(`Server error: ${res.statusText}`);
       const data = await res.json();
       currentQuoteId = data.id;
+      currentQuoteTotal = data.total_xaf;
 
       els.breakdownList.innerHTML = data.breakdown.map(li => `
-        <div class="flex justify-between text-[var(--ink-soft)]">
-          <span>${li.label}</span><span>${fmtXAF(li.amount_xaf)}</span>
+        <div class="flex justify-between">
+          <span>${li.label}</span><span class="mono">${fmtXAF(li.amount_xaf)}</span>
         </div>
       `).join("");
       els.subtotal.textContent = fmtXAF(data.subtotal_xaf);
@@ -355,24 +755,46 @@
       els.tax.textContent = fmtXAF(data.tax_xaf);
       els.total.textContent = fmtXAF(data.total_xaf);
 
-      els.quoteSection.classList.remove('hidden');
-      els.orderFormSection.classList.remove('hidden');
-      els.receiptSection.classList.add('hidden');
+      stepUnlocked.quote = true;
+      stepUnlocked.receipt = false;
+      showStep('quote');
     } catch (e) {
-      alert("Could not calculate quote. Is the backend running?");
+      showError(`Quote calculation failed: ${e.message}.`);
     } finally {
-      els.quoteBtn.disabled = false;
-      els.quoteBtn.textContent = "Calculate Quote →";
+      hideLoading(els.quoteBtn, 'Calculate quote');
     }
   });
 
-  els.placeOrderBtn.addEventListener('click', async () => {
+  // ---------- Accordion ----------
+  els.accordionToggle.addEventListener('click', () => {
+    const isOpen = els.accordionPanel.classList.toggle('open');
+    els.accordionToggle.setAttribute('aria-expanded', String(isOpen));
+    els.accordionToggle.querySelector('.accordion-chevron').classList.toggle('open', isOpen);
+  });
+
+  // ---------- Order confirmation modal ----------
+  function openConfirmModal() {
     if (!currentQuoteId) {
-      alert("Calculate a quote first.");
+      showError("Error: No quote ID found. Please recalculate.");
       return;
     }
-    els.placeOrderBtn.disabled = true;
-    els.placeOrderBtn.textContent = "Placing order…";
+    els.confirmModalError.classList.add('hidden');
+    els.confirmModalClient.textContent = els.clientNameInput.value.trim() || "Walk-in client";
+    els.confirmModalContact.textContent = els.clientContactInput.value.trim() || "—";
+    els.confirmModalTotal.textContent = fmtXAF(currentQuoteTotal);
+    els.confirmModal.classList.add('open');
+  }
+  function closeConfirmModal() {
+    els.confirmModal.classList.remove('open');
+  }
+  els.placeOrderBtn.addEventListener('click', openConfirmModal);
+  els.confirmModalCancel.addEventListener('click', closeConfirmModal);
+  els.confirmModal.addEventListener('click', (e) => { if (e.target === els.confirmModal) closeConfirmModal(); });
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeConfirmModal(); });
+
+  async function submitOrder() {
+    showLoading(els.confirmModalConfirm, 'Placing order');
+    els.confirmModalError.classList.add('hidden');
 
     try {
       const res = await fetch(`${API_BASE}/orders`, {
@@ -385,39 +807,22 @@
         }),
       });
       if (!res.ok) throw new Error(await res.text());
-      const receipt = await res.json();
-      renderReceipt(receipt);
-      els.receiptSection.classList.remove('hidden');
-      els.receiptSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      currentReceipt = await res.json();
+      els.receiptOrderId.textContent = `#${currentReceipt.order_id.slice(0, 8).toUpperCase()}`;
+
+      closeConfirmModal();
+      stepUnlocked.receipt = true;
+      showStep('receipt');
     } catch (e) {
-      alert("Could not place order. Is the backend running, and did you calculate a quote first?");
+      els.confirmModalError.textContent = `Order placement failed: ${e.message}.`;
+      els.confirmModalError.classList.remove('hidden');
     } finally {
-      els.placeOrderBtn.disabled = false;
-      els.placeOrderBtn.textContent = "Place Order →";
+      hideLoading(els.confirmModalConfirm, 'Confirm & submit');
     }
-  });
-
-  function renderReceipt(r) {
-    currentReceipt = r;
-    document.getElementById('receipt-order-id').textContent = `#${r.order_id.slice(0, 8).toUpperCase()}`;
-    document.getElementById('receipt-client-name').textContent = r.client_name || "Walk-in client";
-    document.getElementById('receipt-client-contact').textContent = r.client_contact || "";
-    document.getElementById('receipt-date').textContent = new Date(r.created_at).toLocaleString();
-    document.getElementById('receipt-status').textContent = r.status;
-    document.getElementById('receipt-raw-query').textContent = r.raw_query || "(manually specified)";
-
-    document.getElementById('receipt-breakdown').innerHTML = r.breakdown.map(li => `
-      <div class="flex justify-between text-[var(--ink-soft)]">
-        <span>${li.label}</span><span>${fmtXAF(li.amount_xaf)}</span>
-      </div>
-    `).join("");
-    document.getElementById('receipt-subtotal').textContent = fmtXAF(r.subtotal_xaf);
-    document.getElementById('receipt-discount').textContent = `− ${fmtXAF(r.discount_xaf)}`;
-    document.getElementById('receipt-rushfee').textContent = fmtXAF(r.rush_fee_xaf);
-    document.getElementById('receipt-tax').textContent = fmtXAF(r.tax_xaf);
-    document.getElementById('receipt-total').textContent = fmtXAF(r.total_xaf);
   }
+  els.confirmModalConfirm.addEventListener('click', submitOrder);
 
+  // ---------- Print receipt ----------
   function printReceipt() {
     if (!currentReceipt) {
       alert("Place an order first — there's no receipt to print yet.");
@@ -439,27 +844,22 @@
 <title>Receipt ${r.order_id.slice(0, 8).toUpperCase()}</title>
 <style>
   * { box-sizing: border-box; }
-  body {
-    font-family: 'Courier New', monospace;
-    color: #1c1b19;
-    max-width: 480px;
-    margin: 24px auto;
-    padding: 0 16px;
-    font-size: 13px;
-    line-height: 1.5;
-  }
-  .header { display: flex; justify-content: space-between; align-items: flex-start;
-    border-bottom: 2px solid #1c1b19; padding-bottom: 12px; margin-bottom: 16px; }
-  .brand { font-weight: bold; font-size: 15px; letter-spacing: 0.5px; }
-  .sub { font-size: 11px; color: #4a4741; }
-  .tag { font-size: 10px; letter-spacing: 0.05em; text-transform: uppercase; color: #4a4741; margin-bottom: 2px; }
-  .grid { display: flex; justify-content: space-between; margin-bottom: 16px; }
-  .row { display: flex; justify-content: space-between; padding: 2px 0; }
-  .divider { border-top: 1px solid #d8d2c4; margin: 12px 0; }
-  .total-row { display: flex; justify-content: space-between; font-weight: bold; font-size: 15px;
-    border-top: 1px solid #1c1b19; padding-top: 8px; margin-top: 8px; }
-  .italic { font-style: italic; color: #4a4741; }
-  .footer { font-size: 10px; color: #4a4741; margin-top: 24px; padding-top: 12px; border-top: 1px solid #d8d2c4; }
+  body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    color: #12141C; max-width: 480px; margin: 24px auto; padding: 0 16px; font-size: 13px; line-height: 1.5; }
+  .header { display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 2px solid #12141C;
+    padding-bottom: 12px; margin-bottom: 16px; }
+  .brand { font-weight: bold; font-size: 16px; }
+  .marks { display: flex; gap: 3px; margin-top: 4px; }
+  .marks span { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+  .sub { font-size: 12px; color: #5B6072; }
+  .tag { font-size: 10px; letter-spacing: 0.05em; text-transform: uppercase; color: #9298A8; margin-bottom: 2px; }
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
+  .row { display: flex; justify-content: space-between; padding: 4px 0; }
+  .divider { border-top: 1px solid #E4E6EC; margin: 12px 0; }
+  .total-row { display: flex; justify-content: space-between; font-weight: bold; font-size: 16px;
+    border-top: 2px solid #12141C; padding-top: 8px; margin-top: 8px; }
+  .italic { font-style: italic; color: #5B6072; }
+  .footer { font-size: 11px; color: #9298A8; margin-top: 24px; padding-top: 12px; border-top: 1px solid #E4E6EC; }
   @media print {
     body { margin: 0 auto; }
     @page { margin: 1.5cm; }
@@ -469,8 +869,11 @@
 <body>
   <div class="header">
     <div>
-      <div class="brand">PRESPRINT PLC</div>
+      <div class="brand">Presprint PLC</div>
       <div class="sub">Limbe, Cameroon</div>
+      <div class="marks">
+        <span style="background:#00AEEF"></span><span style="background:#EC008C"></span><span style="background:#FFC700"></span><span style="background:#12141C"></span>
+      </div>
     </div>
     <div style="text-align:right">
       <div class="tag">Receipt</div>
@@ -484,7 +887,7 @@
       <div>${escapeHtml(r.client_name || "Walk-in client")}</div>
       <div class="sub">${escapeHtml(r.client_contact || "")}</div>
     </div>
-    <div style="text-align:right">
+    <div style="text-align:right;">
       <div class="tag">Date</div>
       <div>${new Date(r.created_at).toLocaleString()}</div>
       <div class="tag" style="margin-top:6px">Status</div>
@@ -492,7 +895,7 @@
     </div>
   </div>
 
-  <div class="tag">Order Request</div>
+  <div class="tag" style="margin-top: 16px;">Order Request</div>
   <div class="italic" style="margin-bottom:16px">${escapeHtml(r.raw_query || "(manually specified)")}</div>
 
   <div class="divider"></div>
@@ -500,7 +903,7 @@
   <div class="divider"></div>
 
   <div class="row"><span>Subtotal</span><span>${fmtXAF(r.subtotal_xaf)}</span></div>
-  <div class="row"><span>Discount</span><span>− ${fmtXAF(r.discount_xaf)}</span></div>
+  <div class="row" style="color: #16A34A;"><span>Discount</span><span>− ${fmtXAF(r.discount_xaf)}</span></div>
   <div class="row"><span>Rush fee</span><span>${fmtXAF(r.rush_fee_xaf)}</span></div>
   <div class="row"><span>Tax</span><span>${fmtXAF(r.tax_xaf)}</span></div>
   <div class="total-row"><span>Total</span><span>${fmtXAF(r.total_xaf)}</span></div>
@@ -535,9 +938,11 @@
   }
 
   els.printReceiptBtn.addEventListener('click', printReceipt);
+  els.newQuoteBtn.addEventListener('click', resetUI);
 
   els.input.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter') els.extractBtn.click();
+    // Use Ctrl+Enter or Cmd+Enter to submit, to allow newlines in textarea
+    if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) els.extractBtn.click();
   });
 </script>
 </body>

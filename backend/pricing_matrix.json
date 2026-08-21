@@ -1,34 +1,124 @@
 {
-  "_comment": "All rates in XAF. Replace these placeholder numbers with real Presprint PLC rates from Week 1 interviews.",
+  "_comment": "All rates in XAF. One matrix per production line + a shared 'common' tail (volume discount, rush, tax). Replace the placeholder numbers with real Presprint PLC rates from the Week 1 interviews — no code changes needed.",
 
-  "paper_rates": {
-    "A3": { "matte": 150, "glossy": 200, "uncoated": 120 },
-    "A4": { "matte": 60,  "glossy": 90,  "uncoated": 50  },
-    "A5": { "matte": 35,  "glossy": 50,  "uncoated": 30  }
+  "common": {
+    "volume_discount_tiers": [
+      { "min_quantity": 1,    "max_quantity": 99,   "discount_percent": 0  },
+      { "min_quantity": 100,  "max_quantity": 499,  "discount_percent": 5  },
+      { "min_quantity": 500,  "max_quantity": 999,  "discount_percent": 10 },
+      { "min_quantity": 1000, "max_quantity": null, "discount_percent": 15 }
+    ],
+    "rush_fee_percent": 20,
+    "tax_percent": 19.25
   },
 
-  "ink_rates": {
-    "full_color": 40,
-    "black_white": 10
+  "exclusions": {
+    "terms": ["pen", "pens", "biro", "ballpoint", "pencil", "pencils", "marker", "markers",
+              "id card", "id cards", "identity card", "identity cards", "badge card"],
+    "reason": "Writing instruments and ID cards are sourced and priced manually by Presprint staff — they are outside the automated quoting workflow."
   },
 
-  "finishing_rates": {
-    "lamination":       { "flat": 500, "per_unit": 25 },
-    "spiral binding":   { "flat": 1000, "per_unit": 0 },
-    "stapling":         { "flat": 0,   "per_unit": 5  },
-    "folding":          { "flat": 0,   "per_unit": 10 },
-    "die-cut":          { "flat": 1500, "per_unit": 15 },
-    "perforation":      { "flat": 500, "per_unit": 5  },
-    "embossing":        { "flat": 2000, "per_unit": 30 }
+  "benchmark": {
+    "_comment": "Flat-sheet work: flyers, posters, business cards, booklets, banners.",
+    "paper_rates": {
+      "A2": { "matte": 320, "glossy": 420, "uncoated": 260 },
+      "A3": { "matte": 150, "glossy": 200, "uncoated": 120 },
+      "A4": { "matte": 60,  "glossy": 90,  "uncoated": 50  },
+      "A5": { "matte": 35,  "glossy": 50,  "uncoated": 30  },
+      "A6": { "matte": 22,  "glossy": 32,  "uncoated": 18  }
+    },
+    "gsm_multipliers": { "80": 1.0, "100": 1.15, "130": 1.35, "170": 1.6, "250": 2.1, "300": 2.5 },
+    "ink_rates": { "full_color": 40, "black_white": 10 },
+    "double_sided_multiplier": 1.8,
+    "finishing_rates": {
+      "lamination":     { "flat": 500,  "per_unit": 25 },
+      "spiral binding": { "flat": 1000, "per_unit": 0  },
+      "stapling":       { "flat": 0,    "per_unit": 5  },
+      "folding":        { "flat": 0,    "per_unit": 10 },
+      "die-cut":        { "flat": 1500, "per_unit": 15 },
+      "perforation":    { "flat": 500,  "per_unit": 5  },
+      "embossing":      { "flat": 2000, "per_unit": 30 }
+    }
   },
 
-  "volume_discount_tiers": [
-    { "min_quantity": 1,    "max_quantity": 99,   "discount_percent": 0  },
-    { "min_quantity": 100,  "max_quantity": 499,  "discount_percent": 5  },
-    { "min_quantity": 500,  "max_quantity": 999,  "discount_percent": 10 },
-    { "min_quantity": 1000, "max_quantity": null, "discount_percent": 15 }
-  ],
+  "book": {
+    "_comment": "Bound work. Interior is costed per press sheet; 'up' is how many book leaves fit on one A4-equivalent sheet.",
+    "trim_sizes": {
+      "A4": { "width_mm": 210, "height_mm": 297, "up": 1 },
+      "B5": { "width_mm": 176, "height_mm": 250, "up": 1 },
+      "A5": { "width_mm": 148, "height_mm": 210, "up": 2 },
+      "A6": { "width_mm": 105, "height_mm": 148, "up": 4 }
+    },
+    "interior_paper_rates_per_sheet": { "60": 18, "70": 22, "80": 26, "100": 34, "120": 42 },
+    "cover_paper_rates_per_sheet":    { "170": 95, "200": 120, "250": 150, "300": 190 },
+    "interior_ink_rates_per_page":    { "full_color": 22, "black_white": 4 },
+    "cover_ink_rates_per_copy":       { "full_color": 120, "black_white": 40 },
+    "binding_rates": {
+      "saddle_stitch": { "flat": 2000,  "per_unit": 60,  "max_pages": 64 },
+      "spiral":        { "flat": 1000,  "per_unit": 250, "max_pages": 400 },
+      "perfect":       { "flat": 15000, "per_unit": 180, "min_pages": 48, "max_pages": 800 },
+      "case":          { "flat": 25000, "per_unit": 900, "min_pages": 64 }
+    },
+    "cover_finish_rates": {
+      "matte":    { "flat": 0,    "per_unit": 20 },
+      "glossy":   { "flat": 0,    "per_unit": 30 },
+      "uncoated": { "flat": 0,    "per_unit": 0  }
+    },
+    "caliper_mm_per_gsm": 0.00125,
+    "finishing_rates": {
+      "lamination":  { "flat": 500,  "per_unit": 25 },
+      "foiling":     { "flat": 4000, "per_unit": 80 },
+      "embossing":   { "flat": 2000, "per_unit": 30 },
+      "die-cut":     { "flat": 1500, "per_unit": 15 }
+    },
+    "defaults": {
+      "trim_size": "A5",
+      "interior_gsm": 80,
+      "cover_gsm": 250,
+      "binding": "perfect",
+      "cover_finish": "glossy",
+      "color_mode": "black_white",
+      "page_count": 64
+    }
+  },
 
-  "rush_fee_percent": 20,
-  "tax_percent": 19.25
+  "merch": {
+    "_comment": "Decorated goods. Cost = blank garment/product + decoration, per placement, per colour.",
+    "blank_rates": {
+      "shirt":    3500,
+      "cap":      3000,
+      "bag":      2800,
+      "mug":      2500,
+      "umbrella": 6500,
+      "lanyard":  900
+    },
+    "size_multipliers": { "S": 1.0, "M": 1.0, "L": 1.05, "XL": 1.12, "XXL": 1.2 },
+    "print_methods": {
+      "screen":      { "setup_per_color_per_placement": 3500, "per_unit_per_color_per_placement": 120, "per_unit_per_placement": 0,   "max_colors": 6 },
+      "dtf":         { "setup_per_color_per_placement": 0,    "per_unit_per_color_per_placement": 0,   "per_unit_per_placement": 700, "max_colors": 99 },
+      "sublimation": { "setup_per_color_per_placement": 0,    "per_unit_per_color_per_placement": 0,   "per_unit_per_placement": 550, "max_colors": 99 },
+      "embroidery":  { "setup_per_color_per_placement": 8000, "per_unit_per_color_per_placement": 0,   "per_unit_per_placement": 950, "max_colors": 12 }
+    },
+    "default_method_by_item": {
+      "shirt": "screen",
+      "cap": "embroidery",
+      "bag": "screen",
+      "mug": "sublimation",
+      "umbrella": "sublimation",
+      "lanyard": "sublimation"
+    },
+    "valid_placements_by_item": {
+      "shirt":    ["front", "back", "sleeve"],
+      "cap":      ["front", "back", "side"],
+      "bag":      ["front", "back"],
+      "mug":      ["wrap", "front"],
+      "umbrella": ["panel", "wrap"],
+      "lanyard":  ["wrap"]
+    },
+    "defaults": {
+      "garment_size": "L",
+      "color_count": 1,
+      "base_color": "#FFFFFF"
+    }
+  }
 }

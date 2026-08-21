@@ -6,7 +6,7 @@ from fastapi.staticfiles import StaticFiles
 
 from app.core.config import settings
 from app.core.database import engine, Base
-from app.routers import extract, quote, orders
+from app.routers import extract, meta, orders, preview, quote
 
 # import models so Base.metadata knows about them before create_all
 from app.models import models  # noqa: F401
@@ -14,16 +14,23 @@ from app.models import models  # noqa: F401
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # Dev convenience only — use Alembic migrations in production.
-    async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.create_all)
+    # Dev convenience only. In production the schema is owned by Alembic
+    # (`alembic upgrade head`) — auto-creating tables there would silently
+    # diverge from the migration history.
+    if settings.environment == "development":
+        async with engine.begin() as conn:
+            await conn.run_sync(Base.metadata.create_all)
     yield
 
 
 app = FastAPI(
     title=settings.app_name,
-    description="Automated AI-powered print cost estimation & order extraction API for Presprint PLC.",
-    version="0.1.0",
+    description=(
+        "Category-aware print cost estimation & order extraction API for Presprint PLC.\n\n"
+        "Three production lines — **book**, **merch**, **benchmark** — each with its own "
+        "extraction vocabulary, cost matrix and parametric 3D preview geometry."
+    ),
+    version="0.2.0",
     lifespan=lifespan,
 )
 
@@ -35,7 +42,9 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+app.include_router(meta.router)
 app.include_router(extract.router)
+app.include_router(preview.router)
 app.include_router(quote.router)
 app.include_router(orders.router)
 

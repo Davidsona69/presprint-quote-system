@@ -8,6 +8,14 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+    "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+  }
+}
+</script>
 <style>
   :root {
     --paper: #F5F6F8;
@@ -23,6 +31,7 @@
     --key: #12141C;
     --success: #16A34A;
     --danger: #DC2626;
+    --warn: #B45309;
   }
 
   * { font-family: 'IBM Plex Sans', sans-serif; }
@@ -48,17 +57,9 @@
   }
 
   /* ---------- Registration mark: signature brand + loader element ---------- */
-  .reg-mark {
-    position: relative;
-    width: 28px;
-    height: 28px;
-    flex-shrink: 0;
-  }
+  .reg-mark { position: relative; width: 28px; height: 28px; flex-shrink: 0; }
   .reg-mark .dot {
-    position: absolute;
-    width: 13px;
-    height: 13px;
-    border-radius: 50%;
+    position: absolute; width: 13px; height: 13px; border-radius: 50%;
     mix-blend-mode: multiply;
     transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
   }
@@ -72,21 +73,15 @@
   .reg-mark:not(.aligned) .dot.y { transform: translate(-2px, 1px); }
   .reg-mark:not(.aligned) .dot.k { transform: translate(2px, 1px); }
 
-  .reg-mark.spin .dot {
-    animation: reg-pulse 1.1s ease-in-out infinite;
-  }
-  .reg-mark.spin .dot.c { animation-delay: 0s; }
-  .reg-mark.spin .dot.m { animation-delay: 0.1s; }
-  .reg-mark.spin .dot.y { animation-delay: 0.2s; }
-  .reg-mark.spin .dot.k { animation-delay: 0.3s; }
+  .reg-mark.spin .dot { animation: reg-pulse 1.1s ease-in-out infinite; }
+  .reg-mark.spin .dot.c { animation-delay: 0s;    --rx: -2px; --ry: -1px; }
+  .reg-mark.spin .dot.m { animation-delay: 0.1s;  --rx: 2px;  --ry: -1px; }
+  .reg-mark.spin .dot.y { animation-delay: 0.2s;  --rx: -2px; --ry: 1px; }
+  .reg-mark.spin .dot.k { animation-delay: 0.3s;  --rx: 2px;  --ry: 1px; }
   @keyframes reg-pulse {
     0%, 100% { transform: translate(var(--rx, 0), var(--ry, 0)) scale(1); }
     50% { transform: translate(0, 0) scale(0.85); }
   }
-  .reg-mark.spin .dot.c { --rx: -2px; --ry: -1px; }
-  .reg-mark.spin .dot.m { --rx: 2px; --ry: -1px; }
-  .reg-mark.spin .dot.y { --rx: -2px; --ry: 1px; }
-  .reg-mark.spin .dot.k { --rx: 2px; --ry: 1px; }
 
   /* ---------- Cards & surfaces ---------- */
   .card {
@@ -97,14 +92,11 @@
   }
 
   .field-label {
-    font-size: 0.7rem;
-    font-weight: 600;
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
-    color: var(--ink-soft);
-    display: block;
-    margin-bottom: 6px;
+    font-size: 0.7rem; font-weight: 600; letter-spacing: 0.06em;
+    text-transform: uppercase; color: var(--ink-soft);
+    display: block; margin-bottom: 6px;
   }
+  .field-label .req { color: var(--magenta); margin-left: 3px; }
 
   .field-input {
     width: 100%;
@@ -118,100 +110,97 @@
   }
   .field-input:hover { border-color: var(--line-strong); }
   .field-input:focus {
-    outline: none;
-    border-color: var(--cyan);
+    outline: none; border-color: var(--cyan);
     box-shadow: 0 0 0 3px rgba(0, 174, 239, 0.14);
   }
   .field-input::placeholder { color: var(--ink-faint); }
+  .field-input.missing { border-color: #F5B942; background: #FFFCF4; }
+
+  select.field-input {
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='%235B6072' d='M1 1l5 5 5-5'/%3E%3C/svg%3E");
+    background-repeat: no-repeat; background-position: right 14px center; padding-right: 36px;
+  }
 
   /* ---------- Buttons ---------- */
   .btn {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
-    font-weight: 600;
-    font-size: 0.9rem;
-    border-radius: 10px;
-    padding: 12px 20px;
+    display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+    font-weight: 600; font-size: 0.9rem; border-radius: 10px; padding: 12px 20px;
     transition: transform 0.12s ease, box-shadow 0.15s ease, background 0.15s ease, opacity 0.15s ease;
     cursor: pointer;
   }
   .btn:active { transform: scale(0.98); }
   .btn:disabled { opacity: 0.55; cursor: not-allowed; transform: none; }
 
-  .btn-primary {
-    background: var(--ink);
-    color: white;
-    box-shadow: 0 1px 2px rgba(18,20,28,0.1);
-  }
+  .btn-primary { background: var(--ink); color: white; box-shadow: 0 1px 2px rgba(18,20,28,0.1); }
   .btn-primary:hover:not(:disabled) { background: #262A38; box-shadow: 0 4px 14px -4px rgba(18,20,28,0.35); }
 
-  .btn-accent {
-    background: linear-gradient(135deg, var(--cyan), #0091C7);
-    color: white;
-  }
+  .btn-accent { background: linear-gradient(135deg, var(--cyan), #0091C7); color: white; }
   .btn-accent:hover:not(:disabled) { box-shadow: 0 4px 16px -4px rgba(0,174,239,0.5); }
 
-  .btn-success {
-    background: linear-gradient(135deg, #22C55E, var(--success));
-    color: white;
-  }
+  .btn-success { background: linear-gradient(135deg, #22C55E, var(--success)); color: white; }
   .btn-success:hover:not(:disabled) { box-shadow: 0 4px 16px -4px rgba(22,163,74,0.5); }
 
-  .btn-ghost {
-    background: transparent;
-    color: var(--ink-soft);
-    border: 1.5px solid var(--line);
-  }
+  .btn-ghost { background: transparent; color: var(--ink-soft); border: 1.5px solid var(--line); }
   .btn-ghost:hover:not(:disabled) { border-color: var(--line-strong); background: var(--paper); color: var(--ink); }
 
   /* ---------- Step nav ---------- */
   .step-nav-btn {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    padding: 8px 12px 8px 8px;
-    border-radius: 999px;
-    font-size: 0.78rem;
-    font-weight: 600;
-    color: var(--ink-faint);
-    background: transparent;
-    border: 1.5px solid transparent;
-    transition: all 0.15s ease;
-    white-space: nowrap;
+    display: flex; align-items: center; gap: 8px;
+    padding: 8px 12px 8px 8px; border-radius: 999px;
+    font-size: 0.78rem; font-weight: 600;
+    color: var(--ink-faint); background: transparent;
+    border: 1.5px solid transparent; transition: all 0.15s ease; white-space: nowrap;
   }
   .step-nav-btn .num {
-    width: 22px; height: 22px;
-    border-radius: 50%;
+    width: 22px; height: 22px; border-radius: 50%;
     display: flex; align-items: center; justify-content: center;
-    font-size: 0.7rem;
-    background: var(--line);
-    color: var(--ink-faint);
-    flex-shrink: 0;
-    transition: all 0.15s ease;
+    font-size: 0.7rem; background: var(--line); color: var(--ink-faint);
+    flex-shrink: 0; transition: all 0.15s ease;
   }
   .step-nav-btn.done { color: var(--ink); cursor: pointer; }
   .step-nav-btn.done .num { background: var(--ink); color: white; }
   .step-nav-btn.done:hover { background: var(--paper); border-color: var(--line); }
-  .step-nav-btn.active { color: var(--ink); background: var(--surface); border-color: var(--line-strong);
-    box-shadow: 0 1px 3px rgba(18,20,28,0.08); }
+  .step-nav-btn.active {
+    color: var(--ink); background: var(--surface); border-color: var(--line-strong);
+    box-shadow: 0 1px 3px rgba(18,20,28,0.08);
+  }
   .step-nav-btn.active .num { background: var(--cyan); color: white; }
   .step-nav-btn:disabled { cursor: not-allowed; }
 
   /* ---------- Section transitions ---------- */
-  .step-section {
-    animation: rise 0.45s cubic-bezier(0.16, 1, 0.3, 1);
-  }
+  .step-section { animation: rise 0.45s cubic-bezier(0.16, 1, 0.3, 1); }
   @keyframes rise {
     from { opacity: 0; transform: translateY(14px); }
     to { opacity: 1; transform: translateY(0); }
   }
 
+  /* ---------- Category cards ---------- */
+  .cat-card {
+    background: var(--surface); border: 1.5px solid var(--line);
+    border-radius: 16px; padding: 22px; text-align: left; width: 100%;
+    transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
+    cursor: pointer;
+  }
+  .cat-card:hover {
+    transform: translateY(-3px); border-color: var(--line-strong);
+    box-shadow: 0 14px 30px -16px rgba(18,20,28,0.22);
+  }
+  .cat-card.selected { border-color: var(--cyan); box-shadow: 0 0 0 3px rgba(0,174,239,0.14); }
+  .cat-icon {
+    width: 44px; height: 44px; border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+    background: var(--paper); border: 1px solid var(--line); margin-bottom: 14px;
+  }
+  .chip {
+    display: inline-block; font-size: 0.68rem; padding: 3px 9px; border-radius: 999px;
+    background: var(--paper); border: 1px solid var(--line); color: var(--ink-soft);
+    margin: 3px 4px 0 0;
+  }
+
   /* ---------- Accordion ---------- */
   .accordion-panel {
-    display: grid;
-    grid-template-rows: 0fr;
+    display: grid; grid-template-rows: 0fr;
     transition: grid-template-rows 0.3s cubic-bezier(0.16, 1, 0.3, 1);
   }
   .accordion-panel.open { grid-template-rows: 1fr; }
@@ -221,16 +210,12 @@
 
   /* ---------- Modal ---------- */
   .modal-backdrop {
-    background: rgba(18, 20, 28, 0.45);
-    backdrop-filter: blur(3px);
-    opacity: 0;
-    pointer-events: none;
-    transition: opacity 0.2s ease;
+    background: rgba(18, 20, 28, 0.45); backdrop-filter: blur(3px);
+    opacity: 0; pointer-events: none; transition: opacity 0.2s ease;
   }
   .modal-backdrop.open { opacity: 1; pointer-events: auto; }
   .modal-panel {
-    transform: scale(0.96) translateY(8px);
-    opacity: 0;
+    transform: scale(0.96) translateY(8px); opacity: 0;
     transition: transform 0.22s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.2s ease;
   }
   .modal-backdrop.open .modal-panel { transform: scale(1) translateY(0); opacity: 1; }
@@ -246,37 +231,48 @@
   .status-connected { background: #22C55E; box-shadow: 0 0 0 3px rgba(34,197,94,0.18); }
   .status-offline { background: #EF4444; box-shadow: 0 0 0 3px rgba(239,68,68,0.18); }
 
-  .feature-card {
-    background: var(--surface);
-    border: 1px solid var(--line);
-    border-radius: 14px;
-    padding: 16px;
-    transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
-  }
-  .feature-card:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 10px 24px -12px rgba(18,20,28,0.16);
-    border-color: var(--line-strong);
-  }
-
   .perforation {
     background-image: radial-gradient(circle, var(--paper) 2.5px, transparent 2.5px);
-    background-size: 14px 14px;
-    background-position: center;
-    height: 6px;
+    background-size: 14px 14px; background-position: center; height: 6px;
   }
-
-  select.field-input { appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='%235B6072' d='M1 1l5 5 5-5'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 14px center; padding-right: 36px; }
 
   .confidence-track { height: 6px; background: var(--line); border-radius: 999px; overflow: hidden; }
   .confidence-fill-bar { height: 100%; border-radius: 999px; transition: width 0.5s cubic-bezier(0.16,1,0.3,1), background 0.3s ease; }
+
+  /* ---------- 3D viewport ---------- */
+  .viewport {
+    position: relative; width: 100%; min-height: 320px; height: 100%;
+    border-radius: 14px; overflow: hidden;
+    background: radial-gradient(circle at 50% 30%, #FFFFFF 0%, #EDEFF3 100%);
+    border: 1px solid var(--line);
+  }
+  .viewport canvas { display: block; width: 100%; height: 100%; touch-action: none; }
+  .viewport-badge {
+    position: absolute; top: 10px; left: 10px; z-index: 2;
+    font-size: 0.65rem; letter-spacing: 0.08em; text-transform: uppercase;
+    background: rgba(255,255,255,0.85); backdrop-filter: blur(4px);
+    border: 1px solid var(--line); border-radius: 999px; padding: 4px 10px;
+    color: var(--ink-soft);
+  }
+  .viewport-hint {
+    position: absolute; top: 10px; right: 10px; z-index: 2;
+    font-size: 0.62rem; color: var(--ink-faint);
+    background: rgba(255,255,255,0.8); border-radius: 999px; padding: 3px 10px;
+    pointer-events: none;
+  }
+  .dim-readout {
+    position: absolute; bottom: 10px; right: 10px; z-index: 2;
+    font-size: 0.68rem; text-align: right; color: var(--ink-soft);
+    background: rgba(255,255,255,0.85); backdrop-filter: blur(4px);
+    border: 1px solid var(--line); border-radius: 10px; padding: 6px 10px;
+  }
 </style>
 </head>
 <body class="min-h-screen">
 
   <!-- Header -->
   <header class="sticky top-0 z-30 backdrop-blur-md bg-white/75 border-b border-[var(--line)]">
-    <div class="max-w-5xl mx-auto px-5 sm:px-8">
+    <div class="max-w-6xl mx-auto px-5 sm:px-8">
       <div class="flex justify-between items-center py-3.5">
         <div class="flex items-center gap-3">
           <div class="reg-mark aligned" id="brand-mark">
@@ -294,37 +290,65 @@
     </div>
   </header>
 
-  <main class="max-w-5xl mx-auto px-5 sm:px-8 pb-24">
+  <main class="max-w-6xl mx-auto px-5 sm:px-8 pb-24">
 
     <!-- Step nav -->
     <nav class="flex items-center gap-1.5 overflow-x-auto py-5 -mx-1 px-1" id="step-nav" aria-label="Progress">
-      <button class="step-nav-btn active" id="nav-specify" data-target="specify">
-        <span class="num">1</span>Describe
-      </button>
+      <button class="step-nav-btn active" data-step="category"><span class="num">1</span>Category</button>
       <div class="w-4 h-px bg-[var(--line)] flex-shrink-0"></div>
-      <button class="step-nav-btn" id="nav-review" data-target="review" disabled>
-        <span class="num">2</span>Review specs
-      </button>
+      <button class="step-nav-btn" data-step="describe" disabled><span class="num">2</span>Describe</button>
       <div class="w-4 h-px bg-[var(--line)] flex-shrink-0"></div>
-      <button class="step-nav-btn" id="nav-quote" data-target="quote" disabled>
-        <span class="num">3</span>Quote &amp; order
-      </button>
+      <button class="step-nav-btn" data-step="review" disabled><span class="num">3</span>Review &amp; preview</button>
       <div class="w-4 h-px bg-[var(--line)] flex-shrink-0"></div>
-      <button class="step-nav-btn" id="nav-receipt" data-target="receipt" disabled>
-        <span class="num">4</span>Receipt
-      </button>
+      <button class="step-nav-btn" data-step="quote" disabled><span class="num">4</span>Quote &amp; order</button>
+      <div class="w-4 h-px bg-[var(--line)] flex-shrink-0"></div>
+      <button class="step-nav-btn" data-step="receipt" disabled><span class="num">5</span>Receipt</button>
     </nav>
 
-    <!-- Step 1: Describe -->
-    <section id="step1-input" class="step-section">
+    <!-- ============ Step 1: Category ============ -->
+    <section id="step-category" class="step-section">
+      <div class="card p-6 sm:p-8">
+        <h2 class="display text-2xl sm:text-[28px] font-bold leading-tight">
+          What are we printing?<br>
+          <span class="text-[var(--ink-faint)]">Pick a production line.</span>
+        </h2>
+        <p class="text-sm text-[var(--ink-soft)] mt-2.5 max-w-2xl">
+          Presprint runs three lines, and each is costed differently — a book is paper,
+          signatures and binding; merch is blanks and decoration. Choosing here tells the
+          extractor what to look for and the engine which matrix to price against.
+        </p>
+
+        <div class="grid sm:grid-cols-3 gap-4 mt-7" id="category-grid">
+          <div class="text-sm text-[var(--ink-soft)]">Loading categories…</div>
+        </div>
+
+        <p id="category-error" class="text-[var(--danger)] mt-4 text-sm hidden"></p>
+
+        <div class="mt-7 pt-6 border-t border-[var(--line)] flex flex-wrap items-center gap-3">
+          <p class="text-xs text-[var(--ink-faint)] flex-1 min-w-[240px]">
+            Not sure? Skip this and just describe the job — the router will work it out
+            from your wording.
+          </p>
+          <button id="autodetect-btn" class="btn btn-ghost">Skip — auto-detect</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ Step 2: Describe ============ -->
+    <section id="step-describe" class="step-section hidden">
       <div class="grid lg:grid-cols-5 gap-6 items-start">
-        <!-- Left: input -->
         <div class="lg:col-span-3 card p-6 sm:p-8">
-          <h2 class="display text-2xl sm:text-[28px] font-bold leading-tight">Describe your print job.<br><span class="text-[var(--ink-faint)]">Get an exact price back.</span></h2>
-          <p class="text-sm text-[var(--ink-soft)] mt-2.5">Write it the way you'd tell a staff member — quantity, size, finish, deadline. We'll extract the spec automatically.</p>
+          <div class="flex items-center gap-2 mb-1">
+            <span class="chip" id="describe-category-chip" style="margin:0">—</span>
+            <button id="change-category-btn" class="text-xs text-[var(--cyan)] font-medium hover:underline">change</button>
+          </div>
+          <h2 class="display text-2xl sm:text-[28px] font-bold leading-tight mt-3">Describe your print job.<br><span class="text-[var(--ink-faint)]">Get an exact price back.</span></h2>
+          <p class="text-sm text-[var(--ink-soft)] mt-2.5">Write it the way you'd tell a staff member — quantity, size, finish, deadline. Anything you don't say stays blank rather than being guessed.</p>
 
           <label for="query-input" class="field-label mt-6">Print job request</label>
-          <textarea id="query-input" rows="4" class="field-input resize-none text-[15px]" placeholder="e.g. I need 500 A4 flyers, glossy paper, full color and double sided, ready by Friday"></textarea>
+          <textarea id="query-input" rows="4" class="field-input resize-none text-[15px]"></textarea>
+
+          <div class="mt-3 flex flex-wrap gap-2" id="example-chips"></div>
 
           <button id="extract-btn" class="btn btn-primary w-full mt-4">
             <span class="btn-label">Analyze request</span>
@@ -333,63 +357,115 @@
           <p class="text-[11px] text-[var(--ink-faint)] mt-3">Tip: <kbd class="px-1.5 py-0.5 bg-[var(--paper)] border border-[var(--line)] rounded text-[10px] mono">Ctrl</kbd> + <kbd class="px-1.5 py-0.5 bg-[var(--paper)] border border-[var(--line)] rounded text-[10px] mono">Enter</kbd> to analyze</p>
         </div>
 
-        <!-- Right: mark + features -->
         <div class="lg:col-span-2 flex flex-col gap-4">
           <div class="card p-8 flex items-center justify-center bg-gradient-to-br from-white to-[var(--paper)]">
             <div class="reg-mark aligned scale-[2.4]" style="width:28px;height:28px;">
               <div class="dot c"></div><div class="dot m"></div><div class="dot y"></div><div class="dot k"></div>
             </div>
           </div>
-          <div class="feature-card">
+          <div class="card p-4">
             <div class="text-xs font-semibold text-[var(--ink-faint)] uppercase tracking-wide mono">01</div>
             <div class="font-semibold text-sm mt-1">Priced to the plate</div>
-            <p class="text-xs text-[var(--ink-soft)] mt-1 leading-relaxed">Paper, ink, and finishing costed line by line — no flat guesses.</p>
+            <p class="text-xs text-[var(--ink-soft)] mt-1 leading-relaxed">Every line item shows the arithmetic behind it — no flat guesses.</p>
           </div>
-          <div class="feature-card">
+          <div class="card p-4">
             <div class="text-xs font-semibold text-[var(--ink-faint)] uppercase tracking-wide mono">02</div>
-            <div class="font-semibold text-sm mt-1">You review before it's final</div>
-            <p class="text-xs text-[var(--ink-soft)] mt-1 leading-relaxed">Every extracted detail is editable before a quote is calculated.</p>
+            <div class="font-semibold text-sm mt-1">See it before you buy it</div>
+            <p class="text-xs text-[var(--ink-soft)] mt-1 leading-relaxed">A live 3D model built from your spec — spine thickness, trim size, print placement.</p>
           </div>
         </div>
       </div>
     </section>
 
-    <!-- Step 2: Review specs -->
-    <section id="spec-section" class="step-section card p-6 sm:p-8 hidden">
-      <div class="flex flex-wrap justify-between items-center gap-3 mb-1">
-        <h3 class="display text-xl font-bold">Confirm the details</h3>
-        <div class="flex items-center gap-2.5">
-          <span id="confidence-label" class="text-xs mono text-[var(--ink-soft)]">—</span>
-          <div class="confidence-track w-24">
-            <div id="confidence-fill" class="confidence-fill-bar" style="width:0%; background: var(--cyan);"></div>
+    <!-- ============ Guardrail: excluded product ============ -->
+    <section id="step-excluded" class="step-section card p-6 sm:p-8 hidden">
+      <div class="flex items-start gap-4">
+        <div class="w-11 h-11 rounded-full bg-amber-50 border border-amber-200 flex items-center justify-center flex-shrink-0">
+          <svg class="w-5 h-5 text-[var(--warn)]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v4m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
+          </svg>
+        </div>
+        <div class="flex-1">
+          <h3 class="display text-xl font-bold">This one needs a human</h3>
+          <p class="text-sm text-[var(--ink-soft)] mt-2" id="excluded-reason"></p>
+          <p class="text-sm text-[var(--ink-soft)] mt-3">
+            Detected: <span id="excluded-terms" class="mono text-[var(--ink)]"></span>
+          </p>
+          <div class="mt-6 flex flex-col sm:flex-row gap-3">
+            <button id="excluded-back-btn" class="btn btn-ghost">← Edit request</button>
+            <button id="excluded-restart-btn" class="btn btn-primary">Start a different job</button>
           </div>
         </div>
       </div>
-      <p class="text-sm text-[var(--ink-soft)] mb-5">Edit anything that looks off — this is what the quote gets calculated from.</p>
+    </section>
 
-      <p id="low-confidence-warning" class="mb-5 p-3.5 bg-amber-50 border border-amber-200 text-amber-800 rounded-xl text-sm hidden">
-        <strong>Heads up —</strong> a few fields weren't detected confidently. Please review and fill them in below.
-      </p>
+    <!-- ============ Step 3: Review + 3D preview ============ -->
+    <section id="step-review" class="step-section hidden">
+      <div class="grid lg:grid-cols-5 gap-6 items-stretch">
 
-      <div class="grid grid-cols-2 sm:grid-cols-3 gap-4" id="spec-grid"></div>
+        <!-- Spec form -->
+        <div class="lg:col-span-3 card p-6 sm:p-8">
+          <div class="flex flex-wrap justify-between items-center gap-3 mb-1">
+            <h3 class="display text-xl font-bold">Confirm the details</h3>
+            <div class="flex items-center gap-2.5">
+              <span id="confidence-label" class="text-xs mono text-[var(--ink-soft)]">—</span>
+              <div class="confidence-track w-24">
+                <div id="confidence-fill" class="confidence-fill-bar" style="width:0%; background: var(--cyan);"></div>
+              </div>
+            </div>
+          </div>
+          <p class="text-sm text-[var(--ink-soft)] mb-5">Edit anything that looks off — the price and the 3D model both follow this form.</p>
 
-      <div class="flex flex-col sm:flex-row gap-3 mt-7">
-        <button id="back-to-describe-btn" class="btn btn-ghost sm:w-auto" type="button">← Edit request</button>
-        <button id="quote-btn" class="btn btn-accent flex-1">
-          <span class="btn-label">Calculate quote</span>
-        </button>
+          <p id="low-confidence-warning" class="mb-5 p-3.5 bg-amber-50 border border-amber-200 text-amber-800 rounded-xl text-sm hidden">
+            <strong>Heads up —</strong> <span id="low-confidence-text"></span>
+          </p>
+
+          <div class="grid grid-cols-2 sm:grid-cols-3 gap-4" id="spec-grid"></div>
+
+          <div class="flex flex-col sm:flex-row gap-3 mt-7">
+            <button id="back-to-describe-btn" class="btn btn-ghost sm:w-auto" type="button">← Edit request</button>
+            <button id="quote-btn" class="btn btn-accent flex-1">
+              <span class="btn-label">Calculate quote</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- 3D viewport -->
+        <div class="lg:col-span-2 card p-4 flex flex-col gap-3">
+          <div class="flex items-center justify-between px-1.5 pt-1">
+            <h4 class="display font-semibold text-sm">Live preview</h4>
+            <button id="reset-view-btn" class="text-xs text-[var(--ink-faint)] hover:text-[var(--ink)]">reset view</button>
+          </div>
+          <div class="viewport flex-1" id="viewport">
+            <span class="viewport-badge" id="viewport-badge">—</span>
+            <span class="viewport-hint">drag to orbit · scroll to zoom</span>
+            <div class="dim-readout hidden mono" id="dim-readout"></div>
+            <div id="viewport-fallback" class="hidden absolute inset-0 flex items-center justify-center p-6 text-center">
+              <div>
+                <p class="text-sm font-semibold">3D preview unavailable</p>
+                <p class="text-xs text-[var(--ink-soft)] mt-1.5" id="viewport-fallback-reason"></p>
+                <div class="mt-4 text-xs mono text-left inline-block" id="viewport-fallback-dims"></div>
+              </div>
+            </div>
+          </div>
+          <div class="px-1.5 pb-1">
+            <p class="text-[11px] text-[var(--ink-soft)] leading-relaxed" id="preview-notes"></p>
+          </div>
+        </div>
       </div>
     </section>
 
-    <!-- Step 3: Quote + Order (shown together, as before) -->
-    <div id="quote-order-wrap" class="hidden space-y-6">
-      <section id="quote-section" class="step-section card p-6 sm:p-8 hidden">
+    <!-- ============ Step 4: Quote + Order ============ -->
+    <div id="step-quote" class="hidden space-y-6">
+      <section class="step-section card p-6 sm:p-8">
         <div class="flex items-center justify-between mb-5">
           <h3 class="display text-xl font-bold">Your quote</h3>
-          <span class="text-[11px] mono text-[var(--ink-faint)] uppercase tracking-wide">Itemized</span>
+          <span class="text-[11px] mono text-[var(--ink-faint)] uppercase tracking-wide" id="quote-category-tag">Itemized</span>
         </div>
 
-        <div id="breakdown-list" class="space-y-2.5 text-sm text-[var(--ink-soft)]"></div>
+        <div id="quote-warnings" class="mb-5 space-y-2 hidden"></div>
+
+        <div id="breakdown-list" class="space-y-3 text-sm text-[var(--ink-soft)]"></div>
 
         <div class="border-t border-[var(--line)] mt-5 pt-5 space-y-2 text-sm">
           <div class="flex justify-between"><span class="text-[var(--ink-soft)]">Subtotal</span><span id="subtotal" class="mono font-medium"></span></div>
@@ -402,7 +478,6 @@
           <span id="total" class="display font-bold text-3xl text-[var(--cyan)]"></span>
         </div>
 
-        <!-- Accordion: how pricing works -->
         <div class="mt-6 border border-[var(--line)] rounded-xl overflow-hidden">
           <button id="accordion-toggle-pricing" class="w-full flex items-center justify-between px-4 py-3 text-sm font-medium hover:bg-[var(--paper)] transition-colors" type="button" aria-expanded="false">
             <span>How this price was built</span>
@@ -410,19 +485,13 @@
           </button>
           <div class="accordion-panel" id="accordion-panel-pricing">
             <div>
-              <div class="px-4 pb-4 pt-1 text-xs text-[var(--ink-soft)] space-y-2 leading-relaxed border-t border-[var(--line)]">
-                <p><strong class="text-[var(--ink)]">Subtotal</strong> — paper, ink, and any finishing (lamination, binding, etc.), each costed by quantity.</p>
-                <p><strong class="text-[var(--ink)]">Discount</strong> — automatic volume tiers reward larger orders.</p>
-                <p><strong class="text-[var(--ink)]">Rush fee</strong> — applied only when your request implies a tight deadline.</p>
-                <p><strong class="text-[var(--ink)]">Tax</strong> — standard rate applied to the discounted, rush-adjusted subtotal.</p>
-              </div>
+              <div class="px-4 pb-4 pt-1 text-xs text-[var(--ink-soft)] space-y-2 leading-relaxed border-t border-[var(--line)]" id="pricing-explainer"></div>
             </div>
           </div>
         </div>
       </section>
 
-      <!-- Order form -->
-      <section id="order-form-section" class="step-section card p-6 sm:p-8 hidden">
+      <section class="step-section card p-6 sm:p-8">
         <h3 class="display text-xl font-bold">Client details</h3>
         <p class="text-sm text-[var(--ink-soft)] mt-1">Optional — helps production staff reach the client.</p>
         <div class="mt-5 space-y-4">
@@ -441,8 +510,8 @@
       </section>
     </div>
 
-    <!-- Step 4: Receipt -->
-    <section id="receipt-section" class="step-section card overflow-hidden hidden">
+    <!-- ============ Step 5: Receipt ============ -->
+    <section id="step-receipt" class="step-section card overflow-hidden hidden">
       <div class="p-8 sm:p-10 text-center">
         <div class="w-14 h-14 bg-green-50 border border-green-200 rounded-full flex items-center justify-center mx-auto">
           <svg class="w-7 h-7 text-[var(--success)]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>
@@ -466,6 +535,7 @@
       <h3 class="display text-lg font-bold">Confirm this order?</h3>
       <p class="text-sm text-[var(--ink-soft)] mt-1.5">Double-check before it's sent to production.</p>
       <div class="mt-5 space-y-2.5 text-sm border-t border-b border-[var(--line)] py-4">
+        <div class="flex justify-between"><span class="text-[var(--ink-soft)]">Job</span><span id="confirm-modal-job" class="font-medium text-right">—</span></div>
         <div class="flex justify-between"><span class="text-[var(--ink-soft)]">Client</span><span id="confirm-modal-client" class="font-medium text-right">—</span></div>
         <div class="flex justify-between"><span class="text-[var(--ink-soft)]">Contact</span><span id="confirm-modal-contact" class="font-medium text-right">—</span></div>
         <div class="flex justify-between"><span class="text-[var(--ink-soft)]">Total</span><span id="confirm-modal-total" class="font-bold mono text-[var(--cyan)]">—</span></div>
@@ -481,367 +551,996 @@
   </div>
 
   <footer class="border-t border-[var(--line)] bg-white/50">
-    <div class="max-w-5xl mx-auto px-5 sm:px-8 py-6 text-center text-xs text-[var(--ink-faint)]">
+    <div class="max-w-6xl mx-auto px-5 sm:px-8 py-6 text-center text-xs text-[var(--ink-faint)]">
       <p>&copy; <span id="footer-year"></span> Presprint PLC. All rights reserved.</p>
     </div>
   </footer>
 
-<script>
-  // Point this at your backend. Via docker-compose it's exposed on :8000,
-  // or proxied under /api/ once nginx-proxy is in front (Week 7).
-  const API_BASE = "http://localhost:8000"; // Keep this as is for local dev
+<script type="module">
+// ===========================================================================
+//  Presprint quote wizard
+//
+//  Five steps: category -> describe -> review (+ live 3D) -> quote -> receipt.
+//  The review form and the 3D viewport are both driven by the *same* spec
+//  object, and the viewport geometry comes from the backend's /preview-model
+//  endpoint — so the model on screen is dimensionally the job being priced.
+// ===========================================================================
 
-  const els = {
-    input: document.getElementById('query-input'),
-    extractBtn: document.getElementById('extract-btn'),
-    errorMessage: document.getElementById('error-message'),
-    step1Input: document.getElementById('step1-input'),
-    specSection: document.getElementById('spec-section'),
-    specGrid: document.getElementById('spec-grid'),
-    confidenceLabel: document.getElementById('confidence-label'),
-    confidenceFill: document.getElementById('confidence-fill'),
-    lowConfidenceWarning: document.getElementById('low-confidence-warning'),
-    quoteBtn: document.getElementById('quote-btn'),
-    quoteOrderWrap: document.getElementById('quote-order-wrap'),
-    quoteSection: document.getElementById('quote-section'),
-    breakdownList: document.getElementById('breakdown-list'),
-    subtotal: document.getElementById('subtotal'),
-    discount: document.getElementById('discount'),
-    rushfee: document.getElementById('rushfee'),
-    tax: document.getElementById('tax'),
-    total: document.getElementById('total'),
-    apiStatus: document.getElementById('api-status'),
-    orderFormSection: document.getElementById('order-form-section'),
-    clientNameInput: document.getElementById('client-name-input'),
-    clientContactInput: document.getElementById('client-contact-input'),
-    placeOrderBtn: document.getElementById('place-order-btn'),
-    receiptSection: document.getElementById('receipt-section'),
-    receiptOrderId: document.getElementById('receipt-order-id'),
-    printReceiptBtn: document.getElementById('print-receipt-btn'),
-    newQuoteBtn: document.getElementById('new-quote-btn'),
-    backToDescribeBtn: document.getElementById('back-to-describe-btn'),
-    brandMark: document.getElementById('brand-mark'),
-    accordionToggle: document.getElementById('accordion-toggle-pricing'),
-    accordionPanel: document.getElementById('accordion-panel-pricing'),
-    confirmModal: document.getElementById('confirm-modal'),
-    confirmModalClient: document.getElementById('confirm-modal-client'),
-    confirmModalContact: document.getElementById('confirm-modal-contact'),
-    confirmModalTotal: document.getElementById('confirm-modal-total'),
-    confirmModalCancel: document.getElementById('confirm-modal-cancel'),
-    confirmModalConfirm: document.getElementById('confirm-modal-confirm'),
-    confirmModalError: document.getElementById('confirm-modal-error'),
-  };
+// Point this at your backend. Via docker-compose it's exposed on :8000, or
+// proxied under /api/ once nginx-proxy is in front (Week 7). Append
+// ?api=http://host:port to aim the page at a different backend without
+// editing this file — handy when :8000 is already occupied.
+const API_BASE = new URLSearchParams(location.search).get('api')?.replace(/\/$/, "")
+  || "http://localhost:8000";
 
-  let currentEntities = null;
-  let currentConfidence = 0;
-  let currentQuery = "";
-  let currentQuoteId = null;
-  let currentQuoteTotal = 0;
-  let currentReceipt = null;
+// --- Three.js is loaded dynamically so a CDN failure degrades to a text
+// --- readout instead of taking the whole quoting flow down with it.
+let THREE = null, OrbitControls = null, three3DError = null;
+try {
+  THREE = await import('three');
+  ({ OrbitControls } = await import('three/addons/controls/OrbitControls.js'));
+} catch (e) {
+  three3DError = e?.message || "Could not load the 3D library.";
+}
 
-  const fmtXAF = (n) => `${Number(n).toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })} XAF`;
+const $ = (id) => document.getElementById(id);
+const fmtXAF = (n) => `${Number(n).toLocaleString('en-US', { maximumFractionDigits: 0 })} XAF`;
 
-  const FIELD_LABELS = {
-    item_type: "Item", quantity: "Quantity", paper_size: "Size",
-    paper_finish: "Finish", print_side: "Sides", color_mode: "Color", urgency: "Urgency",
-  };
+function escapeHtml(str) {
+  const div = document.createElement('div');
+  div.textContent = str ?? "";
+  return div.innerHTML;
+}
 
-  // ---------- Loading / button states (registration-mark loader) ----------
-  function showLoading(button, text) {
-    button.disabled = true;
-    button.innerHTML = `
-      <span class="reg-mark spin" style="width:16px;height:16px;">
-        <span class="dot c" style="width:7px;height:7px;"></span><span class="dot m" style="width:7px;height:7px;"></span><span class="dot y" style="width:7px;height:7px;"></span><span class="dot k" style="width:7px;height:7px;"></span>
-      </span>
-      ${text}…
+// ---------------------------------------------------------------- state ---
+
+const state = {
+  meta: null,            // /categories payload
+  category: null,        // pinned category, or null for auto-detect
+  spec: null,            // current spec object (what gets priced)
+  confidence: 0,
+  missingFields: [],
+  rawQuery: "",
+  quote: null,
+  receipt: null,
+};
+
+// ------------------------------------------------------------ step nav ----
+
+const STEPS = ["category", "describe", "review", "quote", "receipt"];
+const unlocked = { category: true, describe: false, review: false, quote: false, receipt: false };
+const navButtons = {};
+document.querySelectorAll('.step-nav-btn').forEach(btn => {
+  navButtons[btn.dataset.step] = btn;
+  btn.addEventListener('click', () => { if (unlocked[btn.dataset.step]) showStep(btn.dataset.step); });
+});
+
+function showStep(step) {
+  $('step-category').classList.toggle('hidden', step !== 'category');
+  $('step-describe').classList.toggle('hidden', step !== 'describe');
+  $('step-review').classList.toggle('hidden', step !== 'review');
+  $('step-quote').classList.toggle('hidden', step !== 'quote');
+  $('step-receipt').classList.toggle('hidden', step !== 'receipt');
+  $('step-excluded').classList.add('hidden');
+
+  for (const key of STEPS) {
+    navButtons[key].classList.toggle('active', key === step);
+    navButtons[key].classList.toggle('done', unlocked[key] && key !== step);
+    navButtons[key].disabled = !unlocked[key];
+  }
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+
+  // The renderer can't size itself while its container is display:none.
+  if (step === 'review') viewer.resize();
+}
+
+function showExcluded(exclusion) {
+  for (const s of STEPS) $(`step-${s}`).classList.add('hidden');
+  $('step-quote').classList.add('hidden');
+  $('step-excluded').classList.remove('hidden');
+  // The flow stopped at "describe" — don't leave a later step looking active.
+  for (const key of STEPS) {
+    navButtons[key].classList.toggle('active', key === 'describe');
+    navButtons[key].classList.toggle('done', unlocked[key] && key !== 'describe');
+    navButtons[key].disabled = !unlocked[key];
+  }
+  $('excluded-reason').textContent = exclusion.reason || "";
+  $('excluded-terms').textContent = exclusion.matched_terms.join(", ");
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+// ------------------------------------------------------ loading states ----
+
+function showLoading(button, text) {
+  button.disabled = true;
+  button.dataset.label = button.querySelector('.btn-label')?.textContent || "";
+  button.innerHTML = `
+    <span class="reg-mark spin" style="width:16px;height:16px;">
+      <span class="dot c" style="width:7px;height:7px;"></span><span class="dot m" style="width:7px;height:7px;"></span><span class="dot y" style="width:7px;height:7px;"></span><span class="dot k" style="width:7px;height:7px;"></span>
+    </span>${text}…`;
+}
+function hideLoading(button, originalText) {
+  button.disabled = false;
+  button.innerHTML = `<span class="btn-label">${originalText}</span>`;
+}
+function showError(message) {
+  $('error-message').textContent = message;
+  $('error-message').classList.remove('hidden');
+}
+
+// =========================================================================
+//  3D VIEWER — parametric geometry from the backend's preview config
+// =========================================================================
+
+const MM = 0.01;                       // 1 mm -> 0.01 world units
+const FINISH_ROUGHNESS = { glossy: 0.14, matte: 0.72, uncoated: 0.92 };
+
+/** A generic "printed artwork" texture so surfaces read as decorated, not blank. */
+function artworkTexture(bg = "#FFFFFF") {
+  const c = document.createElement('canvas');
+  c.width = 512; c.height = 512;
+  const g = c.getContext('2d');
+  g.fillStyle = bg; g.fillRect(0, 0, 512, 512);
+
+  g.fillStyle = "#00AEEF"; g.fillRect(64, 96, 384, 22);
+  g.fillStyle = "#12141C"; g.fillRect(64, 138, 300, 14);
+  g.fillStyle = "#9298A8"; g.fillRect(64, 166, 250, 10);
+  g.fillRect(64, 186, 220, 10);
+
+  g.fillStyle = "#EC008C"; g.beginPath(); g.arc(150, 330, 58, 0, Math.PI * 2); g.fill();
+  g.fillStyle = "#FFC700"; g.beginPath(); g.arc(210, 330, 58, 0, Math.PI * 2); g.fill();
+  g.fillStyle = "#00AEEF"; g.beginPath(); g.arc(180, 380, 58, 0, Math.PI * 2); g.fill();
+
+  g.fillStyle = "#12141C";
+  g.font = "600 30px 'IBM Plex Sans', sans-serif";
+  g.fillText("PRESPRINT", 300, 350);
+  g.font = "400 20px 'IBM Plex Sans', sans-serif";
+  g.fillStyle = "#5B6072";
+  g.fillText("Limbe, Cameroon", 300, 382);
+
+  const tex = new THREE.CanvasTexture(c);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  return tex;
+}
+
+function paperMaterial(finish, color = "#FFFFFF", map = null) {
+  return new THREE.MeshStandardMaterial({
+    color, map,
+    roughness: FINISH_ROUGHNESS[finish] ?? 0.7,
+    metalness: 0.02,
+  });
+}
+
+/** Translucent cyan patch marking where decoration lands. */
+function placementPatch(w, h) {
+  return new THREE.Mesh(
+    new THREE.PlaneGeometry(w, h),
+    new THREE.MeshBasicMaterial({ color: 0x00AEEF, transparent: true, opacity: 0.22, side: THREE.DoubleSide })
+  );
+}
+
+// -- per-kind builders -----------------------------------------------------
+
+function buildSheet(cfg) {
+  const g = new THREE.Group();
+  const d = cfg.dimensions_mm;
+  const w = d.width * MM, h = d.height * MM;
+  const t = Math.max(d.thickness ?? 0.1, 0.35) * MM;   // clamp so paper is visible
+
+  const art = artworkTexture();
+  const blank = paperMaterial(cfg.finish, "#FFFFFF");
+  const edge = paperMaterial("uncoated", "#EFEFF2");
+  const printed = paperMaterial(cfg.finish, "#FFFFFF", art);
+  const backFace = cfg.placements.includes("back") ? printed : blank;
+
+  // BoxGeometry face order: +X, -X, +Y, -Y, +Z, -Z
+  const mesh = new THREE.Mesh(
+    new THREE.BoxGeometry(w, h, t),
+    [edge, edge, edge, edge, printed, backFace]
+  );
+  g.add(mesh);
+  return g;
+}
+
+function buildBook(cfg) {
+  const g = new THREE.Group();
+  const d = cfg.dimensions_mm;
+  const w = d.width * MM, h = d.height * MM;
+  const spine = Math.max(d.spine, 3) * MM;
+  const board = 1.2 * MM;
+
+  const art = artworkTexture(cfg.color || "#2C3244");
+  const coverMat = paperMaterial(cfg.finish, "#FFFFFF", art);
+  const boardMat = paperMaterial(cfg.finish, cfg.color || "#2C3244");
+  const pageMat = paperMaterial("uncoated", "#F3F0E8");
+
+  // Text block first, so the covers visibly wrap it.
+  const pages = new THREE.Mesh(
+    new THREE.BoxGeometry(w - 3 * MM, h - 3 * MM, Math.max(spine - 2 * board, 0.5 * MM)),
+    pageMat
+  );
+  pages.position.x = 1.5 * MM;
+  g.add(pages);
+
+  const front = new THREE.Mesh(new THREE.BoxGeometry(w, h, board),
+    [boardMat, boardMat, boardMat, boardMat, coverMat, boardMat]);
+  front.position.z = spine / 2 - board / 2;
+  g.add(front);
+
+  const back = new THREE.Mesh(new THREE.BoxGeometry(w, h, board), boardMat);
+  back.position.z = -spine / 2 + board / 2;
+  g.add(back);
+
+  const spineMesh = new THREE.Mesh(new THREE.BoxGeometry(board, h, spine), boardMat);
+  spineMesh.position.x = -w / 2 + board / 2;
+  g.add(spineMesh);
+
+  return g;
+}
+
+function buildMug(cfg) {
+  const g = new THREE.Group();
+  const d = cfg.dimensions_mm;
+  const r = (d.diameter / 2) * MM, h = d.height * MM;
+
+  const body = paperMaterial("glossy", cfg.color || "#F4F4F5");
+  const wrap = paperMaterial("glossy", "#FFFFFF", artworkTexture(cfg.color || "#F4F4F5"));
+  const inner = paperMaterial("glossy", "#DFE2E8");
+
+  const cup = new THREE.Mesh(
+    new THREE.CylinderGeometry(r, r * 0.94, h, 48, 1, false),
+    [cfg.placements.includes("wrap") ? wrap : body, inner, body]
+  );
+  g.add(cup);
+
+  const handle = new THREE.Mesh(
+    new THREE.TorusGeometry(r * 0.62, r * 0.13, 16, 40, Math.PI * 1.25),
+    body
+  );
+  handle.position.set(r * 0.92, 0, 0);
+  handle.rotation.z = -Math.PI * 0.62;
+  g.add(handle);
+
+  return g;
+}
+
+function buildTshirt(cfg) {
+  const g = new THREE.Group();
+  const d = cfg.dimensions_mm;
+  const w = d.width * MM, h = d.height * MM;
+  const bodyW = w * 0.58, sleeve = (w - bodyW) / 2, shoulder = h * 0.22;
+
+  // Half the silhouette, mirrored — keeps the outline symmetrical for free.
+  const s = new THREE.Shape();
+  s.moveTo(0, h / 2);
+  s.lineTo(bodyW / 2 * 0.42, h / 2 - 0.02);
+  s.lineTo(bodyW / 2, h / 2 - 0.01);
+  s.lineTo(bodyW / 2 + sleeve, h / 2 - shoulder * 0.55);
+  s.lineTo(bodyW / 2 + sleeve, h / 2 - shoulder * 1.25);
+  s.lineTo(bodyW / 2, h / 2 - shoulder * 1.0);
+  s.lineTo(bodyW / 2 * 1.02, -h / 2);
+  s.lineTo(0, -h / 2);
+
+  const s2 = new THREE.Shape();
+  s2.moveTo(0, h / 2);
+  s2.lineTo(-bodyW / 2 * 0.42, h / 2 - 0.02);
+  s2.lineTo(-bodyW / 2, h / 2 - 0.01);
+  s2.lineTo(-(bodyW / 2 + sleeve), h / 2 - shoulder * 0.55);
+  s2.lineTo(-(bodyW / 2 + sleeve), h / 2 - shoulder * 1.25);
+  s2.lineTo(-bodyW / 2, h / 2 - shoulder * 1.0);
+  s2.lineTo(-bodyW / 2 * 1.02, -h / 2);
+  s2.lineTo(0, -h / 2);
+
+  const settings = { depth: 0.12, bevelEnabled: true, bevelSize: 0.03, bevelThickness: 0.03, bevelSegments: 4 };
+  const fabric = paperMaterial("matte", cfg.color || "#F4F4F5");
+  for (const shape of [s, s2]) {
+    g.add(new THREE.Mesh(new THREE.ExtrudeGeometry(shape, settings), fabric));
+  }
+
+  // Decoration patches, sized like a real print area.
+  const printW = bodyW * 0.62, printH = printW * 1.15;
+  if (cfg.placements.includes("front")) {
+    const p = new THREE.Mesh(new THREE.PlaneGeometry(printW, printH),
+      new THREE.MeshStandardMaterial({ map: artworkTexture(cfg.color || "#F4F4F5"), roughness: 0.6 }));
+    p.position.set(0, -h * 0.02, 0.19);
+    g.add(p);
+  }
+  if (cfg.placements.includes("back")) {
+    const p = placementPatch(printW, printH);
+    p.position.set(0, -h * 0.02, -0.07);
+    g.add(p);
+  }
+  if (cfg.placements.includes("sleeve")) {
+    const p = placementPatch(sleeve * 0.6, sleeve * 0.6);
+    p.position.set(bodyW / 2 + sleeve * 0.5, h / 2 - shoulder * 0.9, 0.19);
+    g.add(p);
+  }
+  return g;
+}
+
+function buildCap(cfg) {
+  const g = new THREE.Group();
+  const d = cfg.dimensions_mm;
+  const r = (d.diameter / 2) * MM;
+  const fabric = paperMaterial("matte", cfg.color || "#1E3A5F");
+
+  const crown = new THREE.Mesh(
+    new THREE.SphereGeometry(r, 40, 24, 0, Math.PI * 2, 0, Math.PI / 2),
+    fabric
+  );
+  crown.scale.y = (d.height * MM) / r;
+  g.add(crown);
+
+  const peak = new THREE.Mesh(
+    new THREE.CylinderGeometry(r * 1.02, r * 1.02, 0.5 * MM * 6, 40, 1, false, -Math.PI / 2.6, Math.PI / 1.3),
+    fabric
+  );
+  peak.position.set(0, 0.02, r * 0.55);
+  peak.scale.z = (d.peak * MM) / r;
+  g.add(peak);
+
+  if (cfg.placements.length) {
+    const p = placementPatch(r * 0.9, r * 0.45);
+    p.position.set(0, r * 0.45, r * 0.86);
+    p.rotation.x = -0.25;
+    g.add(p);
+  }
+  return g;
+}
+
+function buildBag(cfg) {
+  const g = new THREE.Group();
+  const d = cfg.dimensions_mm;
+  const w = d.width * MM, h = d.height * MM, gusset = d.gusset * MM;
+  const art = artworkTexture(cfg.color || "#F4F4F5");
+  const canvas = paperMaterial("matte", cfg.color || "#F4F4F5");
+  const printed = paperMaterial("matte", "#FFFFFF", art);
+
+  const body = new THREE.Mesh(new THREE.BoxGeometry(w, h, gusset),
+    [canvas, canvas, canvas, canvas,
+     cfg.placements.includes("front") ? printed : canvas,
+     cfg.placements.includes("back") ? printed : canvas]);
+  g.add(body);
+
+  for (const z of [gusset / 2 - 0.02, -gusset / 2 + 0.02]) {
+    const handle = new THREE.Mesh(new THREE.TorusGeometry(w * 0.22, 0.018, 12, 32, Math.PI), canvas);
+    handle.position.set(0, h / 2, z);
+    g.add(handle);
+  }
+  return g;
+}
+
+function buildUmbrella(cfg) {
+  const g = new THREE.Group();
+  const d = cfg.dimensions_mm;
+  const r = (d.diameter / 2) * MM, h = d.height * MM;
+  const panels = Math.max(6, Math.round(d.panels || 8));
+
+  // A low-segment cone reads as a panelled canopy without any texture work.
+  const canopy = new THREE.Mesh(
+    new THREE.ConeGeometry(r, h * 0.4, panels, 1, true),
+    new THREE.MeshStandardMaterial({
+      color: cfg.color || "#1E3A5F", roughness: 0.55,
+      side: THREE.DoubleSide, flatShading: true,
+    })
+  );
+  canopy.position.y = h * 0.32;
+  g.add(canopy);
+
+  const shaft = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.015, 0.015, h, 16),
+    paperMaterial("glossy", "#3A3F4C")
+  );
+  g.add(shaft);
+
+  const handle = new THREE.Mesh(new THREE.TorusGeometry(0.06, 0.018, 12, 24, Math.PI), paperMaterial("matte", "#5B3A1E"));
+  handle.position.set(0.06, -h / 2, 0);
+  handle.rotation.z = Math.PI / 2;
+  g.add(handle);
+  return g;
+}
+
+function buildLanyard(cfg) {
+  const g = new THREE.Group();
+  const d = cfg.dimensions_mm;
+  const len = d.length * MM, w = d.width * MM;
+
+  const curve = new THREE.CatmullRomCurve3([
+    new THREE.Vector3(0, len * 0.30, 0),
+    new THREE.Vector3(-len * 0.16, len * 0.20, 0.05),
+    new THREE.Vector3(-len * 0.12, -len * 0.08, 0),
+    new THREE.Vector3(0, -len * 0.18, 0),
+    new THREE.Vector3(len * 0.12, -len * 0.08, 0),
+    new THREE.Vector3(len * 0.16, len * 0.20, -0.05),
+    new THREE.Vector3(0, len * 0.30, 0),
+  ], true);
+
+  const strap = new THREE.Mesh(
+    new THREE.TubeGeometry(curve, 160, w / 2, 8, true),
+    paperMaterial("matte", cfg.color || "#00AEEF")
+  );
+  g.add(strap);
+
+  const badge = new THREE.Mesh(
+    new THREE.BoxGeometry(0.55, 0.85, 0.02),
+    paperMaterial("glossy", "#FFFFFF", artworkTexture())
+  );
+  badge.position.y = -len * 0.28;
+  g.add(badge);
+  return g;
+}
+
+const BUILDERS = {
+  sheet: buildSheet, book: buildBook, mug: buildMug, tshirt: buildTshirt,
+  cap: buildCap, bag: buildBag, umbrella: buildUmbrella, lanyard: buildLanyard,
+};
+
+// -- viewer ----------------------------------------------------------------
+
+const viewer = (() => {
+  const container = $('viewport');
+  const fallback = $('viewport-fallback');
+  let renderer, scene, camera, controls, current = null, ok = false;
+
+  function fail(reason) {
+    ok = false;
+    fallback.classList.remove('hidden');
+    $('viewport-fallback-reason').textContent = reason;
+  }
+
+  function init() {
+    if (!THREE) return fail(three3DError || "3D library unavailable.");
+    try {
+      renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+    } catch (e) {
+      return fail("This browser or device doesn't support WebGL.");
+    }
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.outputColorSpace = THREE.SRGBColorSpace;
+    container.appendChild(renderer.domElement);
+
+    scene = new THREE.Scene();
+    camera = new THREE.PerspectiveCamera(38, 1, 0.05, 200);
+    camera.position.set(3, 2.2, 4.5);
+
+    scene.add(new THREE.HemisphereLight(0xffffff, 0xc8ccd6, 1.5));
+    const key = new THREE.DirectionalLight(0xffffff, 2.0);
+    key.position.set(4, 6, 5);
+    scene.add(key);
+    const fill = new THREE.DirectionalLight(0xdfe6ff, 0.7);
+    fill.position.set(-5, 2, -4);
+    scene.add(fill);
+
+    controls = new OrbitControls(camera, renderer.domElement);
+    controls.enableDamping = true;
+    controls.dampingFactor = 0.08;
+    controls.autoRotate = true;
+    controls.autoRotateSpeed = 1.1;
+    controls.enablePan = false;
+    controls.addEventListener('start', () => { controls.autoRotate = false; });
+
+    new ResizeObserver(resize).observe(container);
+    ok = true;
+    resize();
+    renderer.setAnimationLoop(() => { controls.update(); renderer.render(scene, camera); });
+  }
+
+  function resize() {
+    if (!ok) return;
+    const w = container.clientWidth, h = container.clientHeight;
+    if (!w || !h) return;
+    renderer.setSize(w, h, false);
+    camera.aspect = w / h;
+    camera.updateProjectionMatrix();
+  }
+
+  function frame(object) {
+    const box = new THREE.Box3().setFromObject(object);
+    const sphere = box.getBoundingSphere(new THREE.Sphere());
+    const dist = sphere.radius / Math.sin((camera.fov * Math.PI / 180) / 2) * 1.25;
+    controls.target.copy(sphere.center);
+    camera.position.copy(sphere.center).add(new THREE.Vector3(0.55, 0.42, 1).normalize().multiplyScalar(dist));
+    camera.near = Math.max(dist / 100, 0.01);
+    camera.far = dist * 10;
+    camera.updateProjectionMatrix();
+    controls.update();
+  }
+
+  function dispose(obj) {
+    obj.traverse(o => {
+      o.geometry?.dispose?.();
+      const mats = Array.isArray(o.material) ? o.material : (o.material ? [o.material] : []);
+      for (const m of mats) { m.map?.dispose?.(); m.dispose?.(); }
+    });
+  }
+
+  function render(cfg) {
+    $('viewport-badge').textContent = cfg.kind;
+    const dims = Object.entries(cfg.dimensions_mm)
+      .map(([k, v]) => `${k} ${v} mm`).join("  ·  ");
+    $('dim-readout').textContent = dims;
+    $('dim-readout').classList.toggle('hidden', !ok || !dims);
+    $('preview-notes').textContent = (cfg.notes || []).join(" ");
+
+    if (!ok) {
+      $('viewport-fallback-dims').innerHTML = Object.entries(cfg.dimensions_mm)
+        .map(([k, v]) => `<div>${escapeHtml(k)}: ${v} mm</div>`).join("");
+      return;
+    }
+
+    const builder = BUILDERS[cfg.kind] || BUILDERS.sheet;
+    const next = builder(cfg);
+    if (current) { scene.remove(current); dispose(current); }
+    current = next;
+    scene.add(current);
+    frame(current);
+    controls.autoRotate = true;
+  }
+
+  function resetView() { if (ok && current) { frame(current); controls.autoRotate = true; } }
+
+  init();
+  return { render, resize, resetView };
+})();
+
+$('reset-view-btn').addEventListener('click', () => viewer.resetView());
+
+// =========================================================================
+//  Category step
+// =========================================================================
+
+const CATEGORY_ICONS = {
+  book: `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#12141C" stroke-width="1.6"><path d="M4 5.5A2.5 2.5 0 016.5 3H20v15H6.5A2.5 2.5 0 004 20.5z" stroke-linejoin="round"/><path d="M4 20.5A2.5 2.5 0 016.5 18H20v3H6.5A2.5 2.5 0 014 20.5z"/></svg>`,
+  merch: `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#12141C" stroke-width="1.6"><path d="M8 3l4 2 4-2 5 3-2.5 4L17 9v12H7V9l-1.5.5L3 6z" stroke-linejoin="round"/></svg>`,
+  benchmark: `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#12141C" stroke-width="1.6"><rect x="4" y="3" width="13" height="17" rx="1.5"/><path d="M7.5 8h6M7.5 12h6M7.5 16h3.5" stroke-linecap="round"/><path d="M17 6h2.5v14H8" opacity=".4"/></svg>`,
+};
+
+const EXAMPLE_QUERIES = {
+  benchmark: [
+    "500 A4 glossy flyers, double-sided full colour, by Friday",
+    "1000 business cards, 300gsm matte, lamination",
+  ],
+  book: [
+    "800 copies of a 128 page A5 novel, 80gsm interior, 250gsm gloss cover, perfect bound, black and white",
+    "300 exercise books, 64 pages, A4, saddle stitch",
+  ],
+  merch: [
+    "150 navy t-shirts size L, screen print front and back, 3 colours",
+    "60 sublimated mugs with a wrap print, urgent",
+  ],
+};
+
+function renderCategoryCards() {
+  const grid = $('category-grid');
+  grid.innerHTML = "";
+  for (const key of ["book", "merch", "benchmark"]) {
+    const c = state.meta[key];
+    const btn = document.createElement('button');
+    btn.className = "cat-card";
+    btn.dataset.category = key;
+    btn.innerHTML = `
+      <div class="cat-icon">${CATEGORY_ICONS[key]}</div>
+      <div class="display font-bold text-lg">${escapeHtml(c.label)}</div>
+      <p class="text-xs text-[var(--ink-soft)] mt-1.5 leading-relaxed">${escapeHtml(c.blurb)}</p>
+      <div class="mt-3">${c.examples.slice(0, 4).map(e => `<span class="chip">${escapeHtml(e)}</span>`).join("")}</div>
     `;
+    btn.addEventListener('click', () => pickCategory(key));
+    grid.appendChild(btn);
   }
-  function hideLoading(button, originalText) {
-    button.disabled = false;
-    button.innerHTML = `<span class="btn-label">${originalText}</span>`;
+}
+
+function pickCategory(key) {
+  state.category = key;
+  document.querySelectorAll('.cat-card').forEach(c => c.classList.toggle('selected', c.dataset.category === key));
+
+  const label = key ? state.meta[key].label : "Auto-detect";
+  $('describe-category-chip').textContent = label;
+  const examples = key ? EXAMPLE_QUERIES[key] : Object.values(EXAMPLE_QUERIES).map(v => v[0]);
+  $('query-input').placeholder = `e.g. ${examples[0]}`;
+  $('example-chips').innerHTML = examples
+    .map(e => `<button class="chip hover:border-[var(--cyan)] hover:text-[var(--ink)] text-left" data-example="${escapeHtml(e)}">try: ${escapeHtml(e.slice(0, 42))}…</button>`)
+    .join("");
+  $('example-chips').querySelectorAll('[data-example]').forEach(b => {
+    b.addEventListener('click', () => { $('query-input').value = b.dataset.example; $('query-input').focus(); });
+  });
+
+  unlocked.describe = true;
+  showStep('describe');
+}
+
+$('autodetect-btn').addEventListener('click', () => pickCategory(null));
+$('change-category-btn').addEventListener('click', () => showStep('category'));
+
+// =========================================================================
+//  Spec form — generated from /categories so the matrix stays the single
+//  source of truth for what's on offer.
+// =========================================================================
+
+const FIELD_DEFS = {
+  benchmark: [
+    { key: "item_type",    label: "Item",      type: "text" },
+    { key: "quantity",     label: "Quantity",  type: "number" },
+    { key: "paper_size",   label: "Size",      type: "select", options: "paper_size" },
+    { key: "paper_gsm",    label: "Paper GSM", type: "select", options: "paper_gsm", suffix: "gsm" },
+    { key: "paper_finish", label: "Finish",    type: "select", options: "paper_finish" },
+    { key: "print_side",   label: "Sides",     type: "select", options: "print_side" },
+    { key: "color_mode",   label: "Colour",    type: "select", options: "color_mode" },
+    { key: "urgency",      label: "Urgency",   type: "select", literal: ["standard", "high"] },
+    { key: "finishing",    label: "Finishing", type: "checks", options: "finishing", full: true },
+  ],
+  book: [
+    { key: "item_type",     label: "Item",         type: "select", options: "item_type" },
+    { key: "quantity",      label: "Quantity",     type: "number" },
+    { key: "page_count",    label: "Pages",        type: "number" },
+    { key: "trim_size",     label: "Trim size",    type: "select", options: "trim_size" },
+    { key: "interior_gsm",  label: "Interior GSM", type: "select", options: "interior_gsm", suffix: "gsm" },
+    { key: "cover_gsm",     label: "Cover GSM",    type: "select", options: "cover_gsm", suffix: "gsm" },
+    { key: "binding",       label: "Binding",      type: "select", options: "binding" },
+    { key: "cover_finish",  label: "Cover finish", type: "select", options: "cover_finish" },
+    { key: "color_mode",    label: "Interior",     type: "select", options: "color_mode" },
+    { key: "urgency",       label: "Urgency",      type: "select", literal: ["standard", "high"] },
+    { key: "finishing",     label: "Finishing",    type: "checks", options: "finishing", full: true },
+  ],
+  merch: [
+    { key: "item_type",    label: "Product",     type: "select", options: "item_type" },
+    { key: "quantity",     label: "Quantity",    type: "number" },
+    { key: "garment_size", label: "Size",        type: "select", options: "garment_size", onlyFor: ["shirt"] },
+    { key: "print_method", label: "Method",      type: "select", options: "print_method" },
+    { key: "color_count",  label: "Ink colours", type: "number" },
+    { key: "base_color",   label: "Base colour", type: "text" },
+    { key: "urgency",      label: "Urgency",     type: "select", literal: ["standard", "high"] },
+    { key: "placements",   label: "Print placement", type: "checks", dynamic: "placements", full: true },
+  ],
+};
+
+const prettify = (v) => String(v).replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase());
+
+function optionValues(def) {
+  if (def.literal) return def.literal;
+  const opts = state.meta[state.spec.category].options;
+  if (def.dynamic === "placements") {
+    return opts.placements_by_item?.[state.spec.item_type] || ["front"];
+  }
+  return opts[def.options] || [];
+}
+
+function renderSpecForm() {
+  const grid = $('spec-grid');
+  grid.innerHTML = "";
+  const defs = FIELD_DEFS[state.spec.category];
+
+  for (const def of defs) {
+    if (def.onlyFor && !def.onlyFor.includes(state.spec.item_type)) continue;
+
+    const value = state.spec[def.key];
+    const isMissing = state.missingFields.includes(def.key);
+    const required = state.meta[state.spec.category].required_fields.includes(def.key);
+    const wrap = document.createElement('div');
+    if (def.full) wrap.className = "col-span-2 sm:col-span-3";
+
+    const label = `<label class="field-label">${escapeHtml(def.label)}${required ? '<span class="req">*</span>' : ''}</label>`;
+
+    if (def.type === "checks") {
+      const values = optionValues(def);
+      const selected = Array.isArray(value) ? value : [];
+      wrap.innerHTML = `${label}
+        <div class="flex flex-wrap gap-2">
+          ${values.map(v => `
+            <label class="chip cursor-pointer ${selected.includes(v) ? 'border-[var(--cyan)] text-[var(--ink)] bg-[rgba(0,174,239,0.08)]' : ''}">
+              <input type="checkbox" class="mr-1.5 align-middle" data-field="${def.key}" value="${escapeHtml(v)}" ${selected.includes(v) ? 'checked' : ''}>
+              ${escapeHtml(prettify(v))}
+            </label>`).join("")}
+        </div>`;
+    } else if (def.type === "select") {
+      const values = optionValues(def);
+      const notSet = value === null || value === undefined || value === "";
+      wrap.innerHTML = `${label}
+        <select data-field="${def.key}" class="field-input ${isMissing ? 'missing' : ''}">
+          <option value="" ${notSet ? 'selected' : ''}>— not set —</option>
+          ${values.map(v => `<option value="${escapeHtml(v)}" ${String(value) === String(v) ? 'selected' : ''}>${escapeHtml(prettify(v))}${def.suffix ? ' ' + def.suffix : ''}</option>`).join("")}
+        </select>`;
+    } else {
+      wrap.innerHTML = `${label}
+        <input data-field="${def.key}" data-type="${def.type}" type="${def.type === 'number' ? 'number' : 'text'}"
+               value="${value ?? ''}" placeholder="not stated"
+               class="field-input ${isMissing ? 'missing' : ''}" />`;
+    }
+    grid.appendChild(wrap);
   }
 
-  function showError(message) {
-    els.errorMessage.textContent = message;
-    els.errorMessage.classList.remove('hidden');
-  }
+  grid.querySelectorAll('[data-field]').forEach(el => {
+    el.addEventListener('change', onSpecFieldChange);
+    if (el.tagName === 'INPUT' && el.type !== 'checkbox') el.addEventListener('input', debouncedPreview);
+  });
+}
 
-  // ---------- Step navigation ----------
-  const stepNav = {
-    specify: document.getElementById('nav-specify'),
-    review: document.getElementById('nav-review'),
-    quote: document.getElementById('nav-quote'),
-    receipt: document.getElementById('nav-receipt'),
-  };
-  const stepUnlocked = { specify: true, review: false, quote: false, receipt: false };
+function readSpecForm() {
+  const out = { ...state.spec };
+  const grid = $('spec-grid');
 
-  function updateStepNavUI(active) {
-    for (const key of Object.keys(stepNav)) {
-      const btn = stepNav[key];
-      btn.classList.toggle('active', key === active);
-      btn.classList.toggle('done', stepUnlocked[key] && key !== active);
-      btn.disabled = !stepUnlocked[key];
+  for (const def of FIELD_DEFS[state.spec.category]) {
+    if (def.type === "checks") {
+      out[def.key] = [...grid.querySelectorAll(`input[type=checkbox][data-field="${def.key}"]:checked`)]
+        .map(c => c.value);
     }
   }
+  grid.querySelectorAll('select[data-field], input[type=text][data-field], input[type=number][data-field]').forEach(el => {
+    const key = el.dataset.field;
+    let v = el.value.trim();
+    if (v === "") { out[key] = null; return; }
+    out[key] = (el.dataset.type === "number" || el.type === "number") ? (parseInt(v.replace(/[,\s]/g, ''), 10) || null) : v;
+  });
+  return out;
+}
 
-  function showStep(step) {
-    els.step1Input.classList.toggle('hidden', step !== 'specify');
-    els.specSection.classList.toggle('hidden', step !== 'review');
-    els.quoteOrderWrap.classList.toggle('hidden', step !== 'quote');
-    if (step === 'quote') {
-      els.quoteSection.classList.remove('hidden');
-      els.orderFormSection.classList.remove('hidden');
+function onSpecFieldChange(e) {
+  const prevItem = state.spec.item_type;
+  state.spec = readSpecForm();
+  state.missingFields = state.missingFields.filter(f => !state.spec[f]);
+
+  // Changing the product changes which fields and placements even apply.
+  if (state.spec.category === "merch" && state.spec.item_type !== prevItem) {
+    const valid = state.meta.merch.options.placements_by_item[state.spec.item_type] || ["front"];
+    state.spec.placements = (state.spec.placements || []).filter(p => valid.includes(p));
+    if (!state.spec.print_method) {
+      state.spec.print_method = state.meta.merch.options.default_method_by_item[state.spec.item_type] || null;
     }
-    els.receiptSection.classList.toggle('hidden', step !== 'receipt');
-    updateStepNavUI(step);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    renderSpecForm();
+  } else if (e?.target?.type === 'checkbox') {
+    renderSpecForm();   // re-render so the chip highlight follows the checkbox
   }
+  refreshPreview();
+}
 
-  Object.entries(stepNav).forEach(([key, btn]) => {
-    btn.addEventListener('click', () => {
-      if (stepUnlocked[key]) showStep(key);
+let previewTimer = null;
+function debouncedPreview() {
+  clearTimeout(previewTimer);
+  previewTimer = setTimeout(() => { state.spec = readSpecForm(); refreshPreview(); }, 350);
+}
+
+async function refreshPreview() {
+  try {
+    const res = await fetch(`${API_BASE}/preview-model`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ spec: state.spec }),
     });
-  });
+    if (!res.ok) return;
+    viewer.render(await res.json());
+  } catch { /* preview is non-critical — never block quoting on it */ }
+}
 
-  els.backToDescribeBtn.addEventListener('click', () => showStep('specify'));
+// =========================================================================
+//  Extract
+// =========================================================================
 
-  function resetUI() {
-    els.input.value = '';
-    els.errorMessage.classList.add('hidden');
-    currentQuoteId = null;
-    currentReceipt = null;
-    stepUnlocked.review = false;
-    stepUnlocked.quote = false;
-    stepUnlocked.receipt = false;
-    showStep('specify');
-  }
+$('extract-btn').addEventListener('click', async () => {
+  const query = $('query-input').value.trim();
+  if (!query) return showError("Please describe your print job first.");
 
-  // ---------- API status ----------
-  async function checkHealth() {
-    try {
-      const res = await fetch(`${API_BASE}/health`);
-      if (res.ok) {
-        els.apiStatus.innerHTML = `<span class="status-dot status-connected"></span>API connected`;
-        els.brandMark.classList.add('aligned');
-      } else throw new Error();
-    } catch {
-      els.apiStatus.innerHTML = `<span class="status-dot status-offline"></span>API offline`;
-      els.brandMark.classList.remove('aligned');
-    }
-  }
-  checkHealth();
-  setInterval(checkHealth, 30000);
-  document.getElementById('footer-year').textContent = new Date().getFullYear();
+  $('error-message').classList.add('hidden');
+  state.rawQuery = query;
+  showLoading($('extract-btn'), 'Analyzing');
 
-  // ---------- Spec grid ----------
-  function renderSpecGrid(entities) {
-    els.specGrid.innerHTML = "";
-    for (const [key, label] of Object.entries(FIELD_LABELS)) {
-      const val = entities[key];
-      const div = document.createElement('div');
-      if (key === 'print_side' || key === 'color_mode' || key === 'urgency') {
-        const options = {
-          print_side: [{v: 'single', t: 'Single-sided'}, {v: 'double', t: 'Double-sided'}],
-          color_mode: [{v: 'full_color', t: 'Full Color'}, {v: 'black_white', t: 'Black & White'}],
-          urgency: [{v: 'standard', t: 'Standard'}, {v: 'high', t: 'High (Rush)'}],
-        };
-        const notDetected = val === null || val === undefined || val === '';
-        const placeholderOpt = notDetected ? `<option value="" selected>— Not detected —</option>` : '';
-        const selectOptions = options[key].map(o => `<option value="${o.v}" ${val === o.v ? 'selected' : ''}>${o.t}</option>`).join('');
-        div.innerHTML = `
-          <div>
-            <label class="field-label">${label}</label>
-            <select data-field="${key}" class="field-input">${placeholderOpt}${selectOptions}</select>
-          </div>
-        `;
-      } else {
-        div.innerHTML = `
-          <div>
-            <label class="field-label">${label}</label>
-            <input data-field="${key}" value="${val ?? ''}" placeholder="Not detected" class="field-input" />
-          </div>
-        `;
-      }
-      els.specGrid.appendChild(div);
-    }
-    if (entities.finishing && entities.finishing.length) {
-      const div = document.createElement('div');
-      div.className = "col-span-2 sm:col-span-3";
-      div.innerHTML = `
-        <label class="field-label">Finishing</label>
-        <div class="px-3 py-2.5 bg-[var(--paper)] border border-[var(--line)] rounded-lg text-sm">${entities.finishing.join(", ")}</div>
-      `;
-      els.specGrid.appendChild(div);
-    }
-  }
-
-  function readSpecGridOverrides() {
-    const inputs = els.specGrid.querySelectorAll('input[data-field], select[data-field]');
-    const out = { ...currentEntities };
-    inputs.forEach(inp => {
-      const key = inp.dataset.field;
-      let val = inp.value.trim();
-      if (val === "") val = null;
-      if (key === "quantity" && val) val = parseInt(val.replace(/,/g, ''), 10) || null;
-      out[key] = val;
+  try {
+    const res = await fetch(`${API_BASE}/extract-specs`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ query, category: state.category }),
     });
-    return out;
-  }
 
-  // ---------- Extract ----------
-  els.extractBtn.addEventListener('click', async () => {
-    const query = els.input.value.trim();
-    if (!query) {
-      showError("Please describe your print job first.");
+    if (res.status === 422) {
+      const body = await res.json().catch(() => ({}));
+      showError(body.detail || "Couldn't work out what you're printing — pick a category above.");
       return;
     }
-    els.errorMessage.classList.add('hidden');
-    currentQuery = query;
-    showLoading(els.extractBtn, 'Analyzing');
+    if (!res.ok) throw new Error(`Server error: ${res.statusText}`);
 
-    try {
-      const res = await fetch(`${API_BASE}/extract-specs`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ query: query }),
-      });
-      if (!res.ok) throw new Error(`Server error: ${res.statusText}`);
-      const data = await res.json();
-      currentEntities = data.extracted_entities || {};
-      currentConfidence = data.confidence_score || 0;
+    const data = await res.json();
 
-      renderSpecGrid(currentEntities);
-      els.confidenceLabel.textContent = `${(currentConfidence * 100).toFixed(0)}% confidence`;
-      els.confidenceFill.style.width = `${currentConfidence * 100}%`;
-      els.confidenceFill.style.background = data.needs_confirmation ? 'var(--yellow)' : 'var(--cyan)';
-      els.lowConfidenceWarning.classList.toggle('hidden', !data.needs_confirmation);
+    if (data.exclusion?.excluded) return showExcluded(data.exclusion);
 
-      currentQuoteId = null;
-      stepUnlocked.review = true;
-      stepUnlocked.quote = false;
-      stepUnlocked.receipt = false;
-      showStep('review');
-    } catch (e) {
-      showError(`Analysis failed: ${e.message}. Please check the API connection.`);
-    } finally {
-      hideLoading(els.extractBtn, 'Analyze request');
-    }
-  });
+    state.spec = data.spec;
+    state.confidence = data.confidence_score;
+    state.missingFields = data.missing_fields || [];
+    state.quote = null;
 
-  // ---------- Calculate quote ----------
-  els.quoteBtn.addEventListener('click', async () => {
-    const entities = readSpecGridOverrides();
-    showLoading(els.quoteBtn, 'Calculating');
+    // The router may have picked a category the user never chose — reflect it.
+    $('describe-category-chip').textContent = state.meta[data.category].label;
 
-    try {
-      const res = await fetch(`${API_BASE}/calculate-quote`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ entities: entities }),
-      });
-      if (!res.ok) throw new Error(`Server error: ${res.statusText}`);
-      const data = await res.json();
-      currentQuoteId = data.id;
-      currentQuoteTotal = data.total_xaf;
+    renderSpecForm();
+    $('confidence-label').textContent = `${Math.round(state.confidence * 100)}% confidence`;
+    $('confidence-fill').style.width = `${state.confidence * 100}%`;
+    $('confidence-fill').style.background = data.needs_confirmation ? 'var(--yellow)' : 'var(--cyan)';
+    $('low-confidence-warning').classList.toggle('hidden', !data.needs_confirmation);
+    $('low-confidence-text').textContent = state.missingFields.length
+      ? `${state.missingFields.map(prettify).join(", ")} weren't stated. Fill them in below — anything left blank is priced at a documented default.`
+      : `some details weren't detected confidently. Please review them below.`;
 
-      els.breakdownList.innerHTML = data.breakdown.map(li => `
-        <div class="flex justify-between">
-          <span>${li.label}</span><span class="mono">${fmtXAF(li.amount_xaf)}</span>
-        </div>
-      `).join("");
-      els.subtotal.textContent = fmtXAF(data.subtotal_xaf);
-      els.discount.textContent = `− ${fmtXAF(data.discount_xaf)}`;
-      els.rushfee.textContent = fmtXAF(data.rush_fee_xaf);
-      els.tax.textContent = fmtXAF(data.tax_xaf);
-      els.total.textContent = fmtXAF(data.total_xaf);
+    if (data.preview) viewer.render(data.preview);
 
-      stepUnlocked.quote = true;
-      stepUnlocked.receipt = false;
-      showStep('quote');
-    } catch (e) {
-      showError(`Quote calculation failed: ${e.message}.`);
-    } finally {
-      hideLoading(els.quoteBtn, 'Calculate quote');
-    }
-  });
-
-  // ---------- Accordion ----------
-  els.accordionToggle.addEventListener('click', () => {
-    const isOpen = els.accordionPanel.classList.toggle('open');
-    els.accordionToggle.setAttribute('aria-expanded', String(isOpen));
-    els.accordionToggle.querySelector('.accordion-chevron').classList.toggle('open', isOpen);
-  });
-
-  // ---------- Order confirmation modal ----------
-  function openConfirmModal() {
-    if (!currentQuoteId) {
-      showError("Error: No quote ID found. Please recalculate.");
-      return;
-    }
-    els.confirmModalError.classList.add('hidden');
-    els.confirmModalClient.textContent = els.clientNameInput.value.trim() || "Walk-in client";
-    els.confirmModalContact.textContent = els.clientContactInput.value.trim() || "—";
-    els.confirmModalTotal.textContent = fmtXAF(currentQuoteTotal);
-    els.confirmModal.classList.add('open');
+    unlocked.review = true;
+    unlocked.quote = false;
+    unlocked.receipt = false;
+    showStep('review');
+  } catch (e) {
+    showError(`Analysis failed: ${e.message}. Please check the API connection.`);
+  } finally {
+    hideLoading($('extract-btn'), 'Analyze request');
   }
-  function closeConfirmModal() {
-    els.confirmModal.classList.remove('open');
-  }
-  els.placeOrderBtn.addEventListener('click', openConfirmModal);
-  els.confirmModalCancel.addEventListener('click', closeConfirmModal);
-  els.confirmModal.addEventListener('click', (e) => { if (e.target === els.confirmModal) closeConfirmModal(); });
-  document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeConfirmModal(); });
+});
 
-  async function submitOrder() {
-    showLoading(els.confirmModalConfirm, 'Placing order');
-    els.confirmModalError.classList.add('hidden');
+$('query-input').addEventListener('keydown', (e) => {
+  if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) $('extract-btn').click();
+});
+$('back-to-describe-btn').addEventListener('click', () => showStep('describe'));
+$('excluded-back-btn').addEventListener('click', () => showStep('describe'));
+$('excluded-restart-btn').addEventListener('click', resetAll);
 
-    try {
-      const res = await fetch(`${API_BASE}/orders`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          quote_id: currentQuoteId,
-          client_name: els.clientNameInput.value.trim() || null,
-          client_contact: els.clientContactInput.value.trim() || null,
-        }),
-      });
-      if (!res.ok) throw new Error(await res.text());
-      currentReceipt = await res.json();
-      els.receiptOrderId.textContent = `#${currentReceipt.order_id.slice(0, 8).toUpperCase()}`;
+// =========================================================================
+//  Quote
+// =========================================================================
 
-      closeConfirmModal();
-      stepUnlocked.receipt = true;
-      showStep('receipt');
-    } catch (e) {
-      els.confirmModalError.textContent = `Order placement failed: ${e.message}.`;
-      els.confirmModalError.classList.remove('hidden');
-    } finally {
-      hideLoading(els.confirmModalConfirm, 'Confirm & submit');
-    }
-  }
-  els.confirmModalConfirm.addEventListener('click', submitOrder);
+const PRICING_EXPLAINER = {
+  benchmark: [
+    ["Paper", "size x finish x GSM, per sheet, times the run length."],
+    ["Ink", "per side, with double-sided charged at 1.8x rather than 2x — the setup is shared."],
+    ["Finishing", "lamination, binding, folding and the rest, each with a setup charge plus a per-copy rate."],
+  ],
+  book: [
+    ["Interior", "leaves imposed onto press sheets (an A5 book prints 2-up on A4), then ink per printed page."],
+    ["Cover", "board stock plus full-colour cover printing, charged per copy."],
+    ["Binding", "a setup charge plus a per-copy rate, validated against the page count the binding can physically hold."],
+  ],
+  merch: [
+    ["Blank goods", "the undecorated garment or product, scaled by size where it matters."],
+    ["Setup", "screen and embroidery setup is charged per colour, per placement — it's why one-colour runs are cheaper."],
+    ["Decoration", "per unit, per placement, per colour depending on the method."],
+  ],
+};
 
-  // ---------- Print receipt ----------
-  function printReceipt() {
-    if (!currentReceipt) {
-      alert("Place an order first — there's no receipt to print yet.");
-      return;
-    }
-    const r = currentReceipt;
-    const rows = r.breakdown.map(li => `
-      <div class="row"><span>${escapeHtml(li.label)}</span><span>${fmtXAF(li.amount_xaf)}</span></div>
+$('quote-btn').addEventListener('click', async () => {
+  state.spec = readSpecForm();
+  showLoading($('quote-btn'), 'Calculating');
+
+  try {
+    const res = await fetch(`${API_BASE}/calculate-quote`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        spec: state.spec,
+        raw_query: state.rawQuery,
+        confidence_score: state.confidence,
+      }),
+    });
+    if (!res.ok) throw new Error(`Server error: ${res.statusText}`);
+    const data = await res.json();
+    state.quote = data;
+
+    $('quote-category-tag').textContent = `${state.meta[data.category].label} · itemized`;
+
+    $('breakdown-list').innerHTML = data.breakdown.map(li => `
+      <div class="flex justify-between gap-4">
+        <span>
+          ${escapeHtml(li.label)}
+          ${li.detail ? `<span class="block text-[11px] text-[var(--ink-faint)] mono mt-0.5">${escapeHtml(li.detail)}</span>` : ''}
+        </span>
+        <span class="mono whitespace-nowrap">${fmtXAF(li.amount_xaf)}</span>
+      </div>`).join("");
+
+    const warnEl = $('quote-warnings');
+    warnEl.classList.toggle('hidden', !data.warnings?.length);
+    warnEl.innerHTML = (data.warnings || []).map(w => `
+      <p class="p-3 bg-amber-50 border border-amber-200 text-amber-800 rounded-xl text-xs leading-relaxed">${escapeHtml(w)}</p>
     `).join("");
 
-    // A dedicated, self-contained print document — avoids relying on the
-    // Tailwind CDN script re-rendering mid-print, which is unreliable
-    // across browsers when combined with @media print + visibility tricks.
-    const html = `
+    $('subtotal').textContent = fmtXAF(data.subtotal_xaf);
+    $('discount').textContent = `− ${fmtXAF(data.discount_xaf)}`;
+    $('rushfee').textContent = fmtXAF(data.rush_fee_xaf);
+    $('tax').textContent = fmtXAF(data.tax_xaf);
+    $('total').textContent = fmtXAF(data.total_xaf);
+
+    $('pricing-explainer').innerHTML = [
+      ...PRICING_EXPLAINER[data.category],
+      ["Discount", "automatic volume tiers reward larger runs."],
+      ["Rush fee", "applied only when the request implies a tight deadline."],
+      ["Tax", "standard rate on the discounted, rush-adjusted subtotal."],
+    ].map(([t, d]) => `<p><strong class="text-[var(--ink)]">${t}</strong> — ${d}</p>`).join("");
+
+    if (data.preview) viewer.render(data.preview);
+
+    unlocked.quote = true;
+    unlocked.receipt = false;
+    showStep('quote');
+  } catch (e) {
+    showError(`Quote calculation failed: ${e.message}.`);
+    showStep('review');
+  } finally {
+    hideLoading($('quote-btn'), 'Calculate quote');
+  }
+});
+
+$('accordion-toggle-pricing').addEventListener('click', () => {
+  const isOpen = $('accordion-panel-pricing').classList.toggle('open');
+  $('accordion-toggle-pricing').setAttribute('aria-expanded', String(isOpen));
+  $('accordion-toggle-pricing').querySelector('.accordion-chevron').classList.toggle('open', isOpen);
+});
+
+// =========================================================================
+//  Order + receipt
+// =========================================================================
+
+function jobSummary() {
+  const s = state.spec || {};
+  const bits = [s.quantity ? `${s.quantity}x` : null, s.item_type || state.meta?.[s.category]?.label];
+  return bits.filter(Boolean).join(" ") || "Print job";
+}
+
+function openConfirmModal() {
+  if (!state.quote) return showError("No quote found — please recalculate.");
+  $('confirm-modal-error').classList.add('hidden');
+  $('confirm-modal-job').textContent = jobSummary();
+  $('confirm-modal-client').textContent = $('client-name-input').value.trim() || "Walk-in client";
+  $('confirm-modal-contact').textContent = $('client-contact-input').value.trim() || "—";
+  $('confirm-modal-total').textContent = fmtXAF(state.quote.total_xaf);
+  $('confirm-modal').classList.add('open');
+}
+function closeConfirmModal() { $('confirm-modal').classList.remove('open'); }
+
+$('place-order-btn').addEventListener('click', openConfirmModal);
+$('confirm-modal-cancel').addEventListener('click', closeConfirmModal);
+$('confirm-modal').addEventListener('click', (e) => { if (e.target === $('confirm-modal')) closeConfirmModal(); });
+document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeConfirmModal(); });
+
+$('confirm-modal-confirm').addEventListener('click', async () => {
+  showLoading($('confirm-modal-confirm'), 'Placing order');
+  $('confirm-modal-error').classList.add('hidden');
+  try {
+    const res = await fetch(`${API_BASE}/orders`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        quote_id: state.quote.id,
+        client_name: $('client-name-input').value.trim() || null,
+        client_contact: $('client-contact-input').value.trim() || null,
+      }),
+    });
+    if (!res.ok) throw new Error(await res.text());
+    state.receipt = await res.json();
+    $('receipt-order-id').textContent = `#${state.receipt.order_id.slice(0, 8).toUpperCase()}`;
+    closeConfirmModal();
+    unlocked.receipt = true;
+    showStep('receipt');
+  } catch (e) {
+    $('confirm-modal-error').textContent = `Order placement failed: ${e.message}.`;
+    $('confirm-modal-error').classList.remove('hidden');
+  } finally {
+    hideLoading($('confirm-modal-confirm'), 'Confirm & submit');
+  }
+});
+
+function specRows(params) {
+  const skip = new Set(["category", "urgency"]);
+  return Object.entries(params || {})
+    .filter(([k, v]) => !skip.has(k) && v !== null && v !== "" && !(Array.isArray(v) && !v.length))
+    .map(([k, v]) => `<div class="row"><span>${escapeHtml(prettify(k))}</span><span>${escapeHtml(Array.isArray(v) ? v.map(prettify).join(", ") : prettify(v))}</span></div>`)
+    .join("");
+}
+
+$('print-receipt-btn').addEventListener('click', () => {
+  const r = state.receipt;
+  if (!r) return alert("Place an order first — there's no receipt to print yet.");
+
+  const rows = r.breakdown.map(li => `
+    <div class="row"><span>${escapeHtml(li.label)}</span><span>${fmtXAF(li.amount_xaf)}</span></div>
+    ${li.detail ? `<div class="detail">${escapeHtml(li.detail)}</div>` : ''}`).join("");
+
+  // A dedicated, self-contained print document — avoids relying on the
+  // Tailwind CDN script re-rendering mid-print, which is unreliable across
+  // browsers when combined with @media print + visibility tricks.
+  const html = `
 <!DOCTYPE html>
-<html>
-<head>
-<meta charset="UTF-8">
-<title>Receipt ${r.order_id.slice(0, 8).toUpperCase()}</title>
+<html><head><meta charset="UTF-8"><title>Receipt ${r.order_id.slice(0, 8).toUpperCase()}</title>
 <style>
   * { box-sizing: border-box; }
   body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
@@ -854,18 +1553,15 @@
   .sub { font-size: 12px; color: #5B6072; }
   .tag { font-size: 10px; letter-spacing: 0.05em; text-transform: uppercase; color: #9298A8; margin-bottom: 2px; }
   .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
-  .row { display: flex; justify-content: space-between; padding: 4px 0; }
+  .row { display: flex; justify-content: space-between; padding: 4px 0; gap: 12px; }
+  .detail { font-size: 10px; color: #9298A8; margin: -2px 0 4px 0; }
   .divider { border-top: 1px solid #E4E6EC; margin: 12px 0; }
   .total-row { display: flex; justify-content: space-between; font-weight: bold; font-size: 16px;
     border-top: 2px solid #12141C; padding-top: 8px; margin-top: 8px; }
   .italic { font-style: italic; color: #5B6072; }
   .footer { font-size: 11px; color: #9298A8; margin-top: 24px; padding-top: 12px; border-top: 1px solid #E4E6EC; }
-  @media print {
-    body { margin: 0 auto; }
-    @page { margin: 1.5cm; }
-  }
-</style>
-</head>
+  @media print { body { margin: 0 auto; } @page { margin: 1.5cm; } }
+</style></head>
 <body>
   <div class="header">
     <div>
@@ -878,6 +1574,8 @@
     <div style="text-align:right">
       <div class="tag">Receipt</div>
       <div>#${r.order_id.slice(0, 8).toUpperCase()}</div>
+      <div class="tag" style="margin-top:6px">Line</div>
+      <div style="text-transform:capitalize">${escapeHtml(r.category || "")}</div>
     </div>
   </div>
 
@@ -895,8 +1593,11 @@
     </div>
   </div>
 
-  <div class="tag" style="margin-top: 16px;">Order Request</div>
-  <div class="italic" style="margin-bottom:16px">${escapeHtml(r.raw_query || "(manually specified)")}</div>
+  <div class="tag">Order Request</div>
+  <div class="italic" style="margin-bottom:12px">${escapeHtml(r.raw_query || "(manually specified)")}</div>
+
+  <div class="tag">Specification</div>
+  ${specRows(r.parameters)}
 
   <div class="divider"></div>
   ${rows}
@@ -911,39 +1612,61 @@
   <div class="footer">
     Thank you for your order. This receipt confirms your order has been received and is pending production.
   </div>
-</body>
-</html>`;
+</body></html>`;
 
-    const printWindow = window.open('', '_blank', 'width=600,height=800');
-    if (!printWindow) {
-      alert("Pop-up blocked — please allow pop-ups for this site to print the receipt.");
-      return;
-    }
-    printWindow.document.open();
-    printWindow.document.write(html);
-    printWindow.document.close();
+  const printWindow = window.open('', '_blank', 'width=600,height=800');
+  if (!printWindow) return alert("Pop-up blocked — please allow pop-ups for this site to print the receipt.");
+  printWindow.document.open();
+  printWindow.document.write(html);
+  printWindow.document.close();
+  // Wait for layout before printing, otherwise some browsers print a blank page.
+  printWindow.onload = () => { printWindow.focus(); printWindow.print(); };
+});
 
-    // Wait for the new document to finish laying out before invoking print,
-    // otherwise some browsers print a blank page.
-    printWindow.onload = () => {
-      printWindow.focus();
-      printWindow.print();
-    };
+function resetAll() {
+  $('query-input').value = '';
+  $('error-message').classList.add('hidden');
+  state.spec = null; state.quote = null; state.receipt = null; state.category = null;
+  document.querySelectorAll('.cat-card').forEach(c => c.classList.remove('selected'));
+  unlocked.describe = unlocked.review = unlocked.quote = unlocked.receipt = false;
+  showStep('category');
+}
+$('new-quote-btn').addEventListener('click', resetAll);
+
+// =========================================================================
+//  Boot
+// =========================================================================
+
+async function checkHealth() {
+  try {
+    const res = await fetch(`${API_BASE}/health`);
+    if (!res.ok) throw new Error();
+    $('api-status').innerHTML = `<span class="status-dot status-connected"></span>API connected`;
+    $('brand-mark').classList.add('aligned');
+  } catch {
+    $('api-status').innerHTML = `<span class="status-dot status-offline"></span>API offline`;
+    $('brand-mark').classList.remove('aligned');
   }
+}
 
-  function escapeHtml(str) {
-    const div = document.createElement('div');
-    div.textContent = str ?? "";
-    return div.innerHTML;
+async function loadCategories() {
+  try {
+    const res = await fetch(`${API_BASE}/categories`);
+    if (!res.ok) throw new Error(res.statusText);
+    state.meta = await res.json();
+    renderCategoryCards();
+  } catch (e) {
+    $('category-grid').innerHTML = "";
+    $('category-error').textContent =
+      `Couldn't load the category matrices (${e.message}). Start the backend and reload.`;
+    $('category-error').classList.remove('hidden');
   }
+}
 
-  els.printReceiptBtn.addEventListener('click', printReceipt);
-  els.newQuoteBtn.addEventListener('click', resetUI);
-
-  els.input.addEventListener('keydown', (e) => {
-    // Use Ctrl+Enter or Cmd+Enter to submit, to allow newlines in textarea
-    if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) els.extractBtn.click();
-  });
+$('footer-year').textContent = new Date().getFullYear();
+checkHealth();
+setInterval(checkHealth, 30000);
+loadCategories();
 </script>
 </body>
 </html>

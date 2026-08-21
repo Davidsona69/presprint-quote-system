@@ -1,3 +1,5 @@
+from datetime import datetime, timezone
+
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 from sqlalchemy.orm import declarative_base
 
@@ -13,3 +15,9 @@ async def get_db():
     """FastAPI dependency: yields a DB session per-request and closes it after."""
     async with AsyncSessionLocal() as session:
         yield session
+
+
+def utcnow() -> datetime:
+    """Naive UTC timestamp. `datetime.utcnow()` is deprecated; the DateTime
+    columns are timezone-naive, so strip the tzinfo after converting."""
+    return datetime.now(timezone.utc).replace(tzinfo=None)

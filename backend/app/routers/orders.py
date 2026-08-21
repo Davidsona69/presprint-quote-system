@@ -1,11 +1,9 @@
 import uuid
-from datetime import datetime
-
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.database import get_db
+from app.core.database import get_db, utcnow
 from app.models.models import Order, Quote
 from app.schemas.schemas import OrderCreate, OrderResponse, OrderReceiptResponse, CostLineItem
 
@@ -21,6 +19,8 @@ def _to_receipt(order: Order, quote: Quote) -> OrderReceiptResponse:
         client_contact=order.client_contact,
         quote_id=quote.id,
         raw_query=quote.raw_query,
+        category=quote.category,
+        parameters=quote.parameters or {},
         breakdown=[CostLineItem(**li) for li in quote.breakdown],
         subtotal_xaf=quote.subtotal_xaf,
         discount_xaf=quote.discount_xaf,
@@ -42,7 +42,7 @@ async def create_order(payload: OrderCreate, db: AsyncSession = Depends(get_db))
         client_name=payload.client_name,
         client_contact=payload.client_contact,
         status="pending",
-        created_at=datetime.utcnow(),
+        created_at=utcnow(),
     )
     db.add(order)
     await db.commit()

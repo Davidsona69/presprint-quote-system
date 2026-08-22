@@ -1,3 +1,10 @@
+# Runtime + test dependencies. This is what the Docker image installs.
+#
+# The NLP/ML upgrade paths (spaCy, scikit-learn, XGBoost, pandas) live in
+# requirements-ml.txt and are deliberately NOT installed here — nothing in
+# app/ imports them, and they add ~1.5GB and several minutes to the build.
+# Install them only when you start work in nlp/ or ml/.
+
 fastapi==0.115.0
 uvicorn[standard]==0.30.6
 sqlalchemy[asyncio]==2.0.35
@@ -6,14 +13,6 @@ pydantic==2.9.2
 pydantic-settings==2.5.2
 python-multipart==0.0.9
 alembic==1.13.3
-
-# NLP (Phase 2 upgrade path — rule-based extractor needs none of this yet)
-spacy==3.7.5
-
-# ML (Phase 3 stretch goal, only if real historical job data exists)
-scikit-learn==1.5.2
-xgboost==2.1.1
-pandas==2.2.3
 
 # Testing (aiosqlite lets the suite run with no Postgres container — see tests/conftest.py)
 pytest==8.3.3

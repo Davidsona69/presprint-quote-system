@@ -566,12 +566,29 @@
 //  endpoint — so the model on screen is dimensionally the job being priced.
 // ===========================================================================
 
-// Point this at your backend. Via docker-compose it's exposed on :8000, or
-// proxied under /api/ once nginx-proxy is in front (Week 7). Append
-// ?api=http://host:port to aim the page at a different backend without
-// editing this file — handy when :8000 is already occupied.
-const API_BASE = new URLSearchParams(location.search).get('api')?.replace(/\/$/, "")
-  || "http://localhost:8000";
+// Where the backend lives, resolved at load time so the same file works in
+// every deployment without editing:
+//
+//   1. ?api=http://host:port   explicit override (handy when :8000 is taken)
+//   2. same-origin /api         behind nginx-proxy (any port), no CORS needed
+//   3. host:8000                plain docker compose, page on :8080
+//
+// Step 2 probes rather than guessing from the port number, so the proxy can
+// sit on :80, :8081 or behind another load balancer and this still resolves.
+async function resolveApiBase() {
+  const override = new URLSearchParams(location.search).get('api');
+  if (override) return override.replace(/\/$/, "");
+
+  if (location.protocol.startsWith('http')) {
+    try {
+      const proxied = `${location.origin}/api`;
+      const res = await fetch(`${proxied}/health`, { cache: 'no-store' });
+      if (res.ok) return proxied;
+    } catch { /* not behind the proxy — fall through */ }
+  }
+  return `${location.protocol}//${location.hostname}:8000`;
+}
+const API_BASE = await resolveApiBase();
 
 // --- Three.js is loaded dynamically so a CDN failure degrades to a text
 // --- readout instead of taking the whole quoting flow down with it.

@@ -20,6 +20,11 @@ class Settings(BaseSettings):
     # manually in the frontend instead of trusting the extractor blindly.
     nlp_confidence_threshold: float = 0.55
 
+    # Where the rate matrices live. Overridable so a deployment can mount the
+    # matrix as a config volume and let staff edit rates without rebuilding
+    # the image. Empty = the copy shipped next to the app.
+    pricing_matrix_path: str = ""
+
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
 

@@ -98,30 +98,172 @@ pricing data that early. This build instead:
 Deterministic pricing is auditable, which matters far more to a print shop's
 finance team than an ML black box.
 
-## Local development
+## Running it on Docker
+
+Everything — Postgres, the API, the matrices and the frontend — comes up with
+one command. You need Docker Desktop running; nothing else is installed on the
+host.
+
+### 1. Stop anything already on the ports
+
+The stack binds `5432`, `8000` and `8080`. If you have an older copy of this
+project running, stop it first or the new containers won't get their ports:
 
 ```bash
-docker compose up --build
+docker compose ls
 ```
 
-- Backend: http://localhost:8000 (Swagger docs at `/docs`)
-- Frontend: http://localhost:8080
+Then, from whichever directory that stack was started in:
 
-Or run the backend natively:
+```bash
+docker compose down
+```
+
+### 2. Build and start
+
+From the repository root:
+
+```bash
+docker compose up --build -d
+```
+
+First build takes about a minute. On start the backend waits for Postgres, runs
+`alembic upgrade head`, and only then binds port 8000 — so the API is never up
+with a half-built schema.
+
+### 3. Watch it come up
+
+```bash
+docker compose logs -f backend
+```
+
+You want these four lines:
+
+```
+[entrypoint] waiting for the database…
+[entrypoint] database is up (attempt 1)
+[entrypoint] applying migrations…
+[entrypoint] starting API
+```
+
+`Ctrl-C` stops tailing, not the containers.
+
+### 4. Confirm all three services are healthy
+
+```bash
+docker compose ps
+```
+
+`db` and `backend` should both say `(healthy)`. The backend healthcheck has a
+40-second grace period because migrations run first.
+
+### 5. Open it
+
+| | |
+|---|---|
+| Frontend | http://localhost:8080 |
+| API docs (Swagger) | http://localhost:8000/docs |
+| Health | http://localhost:8000/health |
+| Category matrices | http://localhost:8000/categories |
+
+The header pill should read **API connected**. Run one job end to end — pick
+Book and paste `800 copies of a 128 page A5 novel, 80gsm interior, 250gsm gloss
+cover, perfect bound, black and white`. You should get a 3D book with a 7.03 mm
+spine and a total around 1,582,185 XAF.
+
+### 6. Stopping
+
+```bash
+docker compose down          # stop, keep the database
+docker compose down -v       # stop and wipe the database too
+```
+
+## Working with the matrices under Docker
+
+`backend/pricing_matrix.json` is **mounted into the container as config**, not
+baked into the image:
+
+```yaml
+environment:
+  PRICING_MATRIX_PATH: /config/pricing_matrix.json
+volumes:
+  - ./backend/pricing_matrix.json:/config/pricing_matrix.json:ro
+```
+
+So changing a rate is just editing the file on your machine. The engine keys its
+cache on the file's modification time, so the next quote picks up the new number
+— **no rebuild, no restart**. Edit a rate, then immediately:
+
+```bash
+curl -s -X POST http://localhost:8000/calculate-quote -H "Content-Type: application/json" -d '{"spec":{"category":"benchmark","quantity":100,"paper_size":"A4","paper_finish":"matte","print_side":"single","color_mode":"black_white","urgency":"standard"}}'
+```
+
+If an edit doesn't seem to take — some editors replace the file rather than
+writing in place, which can break a single-file mount — force it:
+
+```bash
+docker compose restart backend
+```
+
+Because `/categories` is derived from the matrix, adding a binding style or a
+merch blank there also adds it to the review form's dropdowns and to the 3D
+preview. Reload the page to pick it up.
+
+A malformed JSON edit will make every pricing endpoint fail, so validate before
+saving:
+
+```bash
+python -m json.tool backend/pricing_matrix.json > /dev/null && echo "matrix OK"
+```
+
+## Production profile (reverse proxy)
+
+```bash
+docker compose --profile prod up -d
+```
+
+This adds `nginx-proxy` in front of everything on port 80, using
+`infra/nginx.conf`:
+
+| Path | Goes to |
+|---|---|
+| `/` | frontend |
+| `/api/` | backend, rate-limited to 10 r/s with burst 20 |
+| `/docs`, `/redoc`, `/openapi.json` | Swagger |
+
+The frontend finds the API by probing same-origin `/api/health` at load time and
+falling back to `host:8000`, so the same `index.html` works behind the proxy, on
+plain compose, and on a non-standard proxy port — no build step, nothing to
+edit. Behind the proxy everything is same-origin, so CORS doesn't apply at all.
+
+Before going live, add SSL: point a domain at the host and uncomment the `443`
+block in `infra/nginx.conf` with Let's Encrypt certs.
+
+## Running without Docker
 
 ```bash
 cd backend
 cp .env.example .env
-python -m venv venv && source venv/bin/activate
+python -m venv venv && source venv/bin/activate   # Windows: venv\Scripts\activate
 pip install -r requirements.txt
+alembic upgrade head
 uvicorn app.main:app --reload
 ```
 
-Then serve `frontend/` with any static server (`python -m http.server 8080`).
+You still need a Postgres reachable at whatever `DATABASE_URL` says. Serve the
+frontend with any static server (`cd frontend && python -m http.server 8080`).
 Opening `index.html` from disk won't work — the page is an ES module.
 
-If port 8000 is already taken, start the API elsewhere and aim the page at it:
+If port 8000 is taken, start the API elsewhere and aim the page at it:
 `http://localhost:8080/index.html?api=http://localhost:8010`.
+
+The NLP/ML upgrade-path packages (spaCy, scikit-learn, XGBoost, pandas) are
+**not** installed by default — nothing in `app/` imports them and they add
+~1.5GB to the image. Install them only when you start on `nlp/` or `ml/`:
+
+```bash
+pip install -r requirements.txt -r requirements-ml.txt
+```
 
 ## Running tests
 
@@ -134,29 +276,36 @@ With no `DATABASE_URL` set the suite runs against a throwaway SQLite file, so it
 works with no containers running. CI sets `DATABASE_URL` to the Postgres service,
 which is what exercises the real JSONB columns.
 
-## Migrations
-
-The schema is owned by Alembic. `create_all` runs only when
-`ENVIRONMENT=development`.
+To run them inside the container instead:
 
 ```bash
-cd backend
-alembic upgrade head                        # apply
-alembic revision --autogenerate -m "..."    # after changing models
+docker compose exec backend pytest tests/ -v
 ```
 
-## Editing pricing rules
+## Migrations
 
-Everything lives in `backend/pricing_matrix.json` — paper and board rates,
-ink rates, binding costs, blank goods, decoration methods, discount tiers, rush
-fee %, tax %, and the excluded-terms list. No code changes needed.
+The schema is owned by Alembic, and the container applies migrations on every
+start. `create_all` only runs when `ENVIRONMENT=development`.
 
-Adding a binding style or a merch blank there also adds it to the review form's
-dropdowns and to the 3D preview, because the form is generated from
-`/categories`, which reads the matrix. One source of truth.
+```bash
+docker compose exec backend alembic current
+docker compose exec backend alembic upgrade head
+docker compose exec backend alembic revision --autogenerate -m "your message"
+```
 
-Get real numbers from Presprint during Week 1 interviews and replace the
-placeholders.
+An autogenerated revision lands in `backend/alembic/versions/` on your host,
+because the backend directory is mounted — commit it like any other file.
+
+## Troubleshooting
+
+| Symptom | Cause | Fix |
+|---|---|---|
+| `port is already allocated` | an older stack is still up | `docker compose ls`, then `docker compose down` in that directory |
+| Header says **API offline** | backend still migrating, or it crashed | `docker compose logs backend` |
+| Header connected, but "Couldn't load the category matrices" | you're talking to an *older* backend on :8000 | `docker compose down` the stale stack, then bring this one up |
+| `relation "quotes" already exists` at start | the database predates Alembic | `docker compose down -v` for a clean start, or `docker compose exec backend alembic stamp head` to adopt it |
+| 3D preview says "unavailable" | no WebGL, or the Three.js CDN is unreachable | it's optional — quoting is unaffected; check the browser console |
+| Pricing endpoints fail after a rate edit | malformed JSON in the matrix | `python -m json.tool backend/pricing_matrix.json` |
 
 ## Roadmap status
 
@@ -181,11 +330,6 @@ payload directly so placing an order is a single round trip.
 
 ## Deployment (Week 7)
 
-```bash
-docker compose --profile prod up -d
-```
-
-This brings up `nginx-proxy` in front of the backend and frontend containers,
-using `infra/nginx.conf`. Point a domain's DNS at the host and add SSL certs
-(Let's Encrypt/certbot) before going live — see the commented block in
-`infra/nginx.conf`.
+See **Production profile** above for the proxy setup. Point a domain's DNS at
+the host and add SSL certs (Let's Encrypt/certbot) before going live — see the
+commented `443` block in `infra/nginx.conf`.

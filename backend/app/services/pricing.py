@@ -28,9 +28,17 @@ import math
 from functools import lru_cache
 from pathlib import Path
 
+from app.core.config import settings
 from app.schemas.schemas import BenchmarkSpec, BookSpec, CostLineItem, MerchSpec, Spec
 
-MATRIX_PATH = Path(__file__).parent.parent.parent / "pricing_matrix.json"
+# PRICING_MATRIX_PATH lets a deployment mount the matrix as a config volume, so
+# staff can change rates without rebuilding the image. Defaults to the copy
+# shipped alongside the app.
+MATRIX_PATH = (
+    Path(settings.pricing_matrix_path)
+    if settings.pricing_matrix_path
+    else Path(__file__).parent.parent.parent / "pricing_matrix.json"
+)
 
 
 @lru_cache(maxsize=1)

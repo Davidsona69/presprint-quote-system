@@ -25,10 +25,22 @@ services:
     environment:
       DATABASE_URL: postgresql+asyncpg://presprint:presprint@db:5432/presprint_quotes
       ENVIRONMENT: development
+      # Rate matrices are read from here, not from the image, so staff can
+      # edit prices without a rebuild. See the mount below.
+      PRICING_MATRIX_PATH: /config/pricing_matrix.json
     ports:
       - "8000:8000"
     volumes:
       - ./backend:/app   # live-reload friendly for dev; remove for prod image
+      # The matrix, mounted read-only as config. Edit ./backend/pricing_matrix.json
+      # on the host and `docker compose restart backend` to apply.
+      - ./backend/pricing_matrix.json:/config/pricing_matrix.json:ro
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://localhost:8000/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 6
+      start_period: 40s   # migrations run before the API binds
 
   frontend:
     image: nginx:alpine
@@ -42,13 +54,18 @@ services:
 
   # Reverse proxy for prod deployment (Week 7). Not needed for local dev —
   # the frontend/backend ports above are already reachable directly.
+  #
+  # Behind this proxy the frontend reaches the API at same-origin /api/, which
+  # the page detects automatically (see API_BASE in frontend/index.html).
   nginx-proxy:
     image: nginx:alpine
     restart: unless-stopped
     profiles: ["prod"]
     depends_on:
-      - backend
-      - frontend
+      backend:
+        condition: service_healthy
+      frontend:
+        condition: service_started
     volumes:
       - ./infra/nginx.conf:/etc/nginx/nginx.conf:ro
     ports:

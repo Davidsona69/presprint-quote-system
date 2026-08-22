@@ -1,0 +1,18 @@
+# Upgrade-path dependencies — NOT part of the running system.
+#
+#   pip install -r requirements.txt -r requirements-ml.txt
+#
+# Needed only when you start on:
+#   nlp/train_ner.py  — v2 spaCy NER, once UAT has produced annotated data
+#   ml/README.md      — cost-adjustment regression, once real job history exists
+#
+# See the README's "Why rule-based NLP + deterministic pricing" section: the
+# MVP ships without these on purpose.
+
+# NLP (Phase 2 upgrade path — the rule-based extractor needs none of this)
+spacy==3.7.5
+
+# ML (Phase 3 stretch goal, only if real historical job data exists)
+scikit-learn==1.5.2
+xgboost==2.1.1
+pandas==2.2.3

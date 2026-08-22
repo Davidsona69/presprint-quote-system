@@ -1,0 +1,18 @@
+# This repo is developed on Windows but its files are consumed by Linux
+# containers. core.autocrlf=true would otherwise check these out with CRLF,
+# and because docker-compose bind-mounts ./backend over the image's /app, the
+# host's CRLF copy wins at runtime — a CRLF shebang fails with the very
+# confusing `env: 'bash\r': No such file or directory`.
+#
+# Force LF for everything a container reads.
+
+* text=auto
+
+*.sh            text eol=lf
+Dockerfile      text eol=lf
+*.conf          text eol=lf
+*.yml           text eol=lf
+*.yaml          text eol=lf
+*.ini           text eol=lf
+*.mako          text eol=lf
+.env.example    text eol=lf

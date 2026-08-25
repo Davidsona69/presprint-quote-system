@@ -14,7 +14,7 @@ Book spine thickness in particular is a real calculation
 from __future__ import annotations
 
 from app.schemas.schemas import BenchmarkSpec, BookSpec, MerchSpec, PreviewConfig, Spec
-from app.services.pricing import book_spine_mm, load_matrix
+from app.services.pricing import book_spine_mm, load_matrix, normalized_book_page_count
 
 # ISO/US sheet sizes in mm, portrait.
 SHEET_SIZES_MM: dict[str, tuple[float, float]] = {
@@ -96,7 +96,7 @@ def _book_preview(spec: BookSpec) -> PreviewConfig:
         notes.append(f"No trim size stated — previewed at {d['trim_size']}.")
 
     spine = book_spine_mm(spec, m)
-    pages = spec.page_count or d["page_count"]
+    pages = normalized_book_page_count(spec, m)
     interior_gsm = spec.interior_gsm or d["interior_gsm"]
     notes.append(
         f"Spine {spine} mm = {pages // 2} leaves x {interior_gsm} gsm "

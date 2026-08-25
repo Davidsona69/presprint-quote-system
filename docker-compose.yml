@@ -4,12 +4,12 @@ services:
     restart: unless-stopped
     environment:
       POSTGRES_USER: presprint
-      POSTGRES_PASSWORD: presprint
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-presprint}
       POSTGRES_DB: presprint_quotes
     volumes:
       - db_data:/var/lib/postgresql/data
     ports:
-      - "5432:5432"
+      - "127.0.0.1:5432:5432"
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U presprint -d presprint_quotes"]
       interval: 5s
@@ -23,13 +23,14 @@ services:
       db:
         condition: service_healthy
     environment:
-      DATABASE_URL: postgresql+asyncpg://presprint:presprint@db:5432/presprint_quotes
-      ENVIRONMENT: development
+      DATABASE_URL: postgresql+asyncpg://presprint:${POSTGRES_PASSWORD:-presprint}@db:5432/presprint_quotes
+      ENVIRONMENT: ${ENVIRONMENT:-development}
+      ADMIN_API_KEY: ${ADMIN_API_KEY:-}
       # Rate matrices are read from here, not from the image, so staff can
       # edit prices without a rebuild. See the mount below.
       PRICING_MATRIX_PATH: /config/pricing_matrix.json
     ports:
-      - "8000:8000"
+      - "127.0.0.1:8000:8000"
     volumes:
       - ./backend:/app   # live-reload friendly for dev; remove for prod image
       # The matrix, mounted read-only as config. Edit ./backend/pricing_matrix.json

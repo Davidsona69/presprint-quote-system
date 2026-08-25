@@ -29,9 +29,9 @@ Category = Literal["book", "merch", "benchmark"]
 
 class _SpecBase(BaseModel):
     item_type: str | None = None
-    quantity: int | None = None
-    urgency: str | None = None          # "standard" | "high"
-    finishing: list[str] = []
+    quantity: int | None = Field(default=None, ge=1, le=10_000_000)
+    urgency: Literal["standard", "high"] | None = None
+    finishing: list[str] = Field(default_factory=list)
 
 
 class BenchmarkSpec(_SpecBase):
@@ -39,23 +39,23 @@ class BenchmarkSpec(_SpecBase):
     category: Literal["benchmark"] = "benchmark"
 
     paper_size: str | None = None       # A3 | A4 | A5 | ...
-    paper_gsm: int | None = None
-    paper_finish: str | None = None     # matte | glossy | uncoated
-    print_side: str | None = None       # single | double
-    color_mode: str | None = None       # full_color | black_white
+    paper_gsm: int | None = Field(default=None, ge=1, le=1000)
+    paper_finish: Literal["matte", "glossy", "uncoated"] | None = None
+    print_side: Literal["single", "double"] | None = None
+    color_mode: Literal["full_color", "black_white"] | None = None
 
 
 class BookSpec(_SpecBase):
     """Bound work. Spine thickness is derived from page count x interior GSM."""
     category: Literal["book"] = "book"
 
-    page_count: int | None = None
+    page_count: int | None = Field(default=None, ge=1, le=10_000)
     trim_size: str | None = None        # A4 | A5 | B5
-    interior_gsm: int | None = None
-    cover_gsm: int | None = None
-    binding: str | None = None          # saddle_stitch | perfect | spiral | case
-    cover_finish: str | None = None     # matte | glossy | uncoated
-    color_mode: str | None = None       # full_color | black_white
+    interior_gsm: int | None = Field(default=None, ge=1, le=1000)
+    cover_gsm: int | None = Field(default=None, ge=1, le=1000)
+    binding: Literal["saddle_stitch", "perfect", "spiral", "case"] | None = None
+    cover_finish: Literal["matte", "glossy", "uncoated"] | None = None
+    color_mode: Literal["full_color", "black_white"] | None = None
 
 
 class MerchSpec(_SpecBase):
@@ -64,8 +64,8 @@ class MerchSpec(_SpecBase):
 
     garment_size: str | None = None     # S | M | L | XL | XXL (garments only)
     print_method: str | None = None     # screen | dtf | sublimation | embroidery
-    placements: list[str] = []          # front | back | sleeve | wrap
-    color_count: int | None = None
+    placements: list[str] = Field(default_factory=list)  # front | back | sleeve | wrap
+    color_count: int | None = Field(default=None, ge=1, le=99)
     base_color: str | None = None
 
 
@@ -84,11 +84,11 @@ class PreviewConfig(BaseModel):
     from. Stored on the quote as JSONB for audit.
     """
     kind: str                                   # book | mug | tshirt | cap | bag | umbrella | lanyard | sheet
-    dimensions_mm: dict[str, float] = {}
+    dimensions_mm: dict[str, float] = Field(default_factory=dict)
     finish: str | None = None                   # matte | glossy | uncoated
     color: str | None = None                    # hex or named base colour
-    placements: list[str] = []
-    notes: list[str] = []                       # derivation notes, e.g. spine maths
+    placements: list[str] = Field(default_factory=list)
+    notes: list[str] = Field(default_factory=list)       # derivation notes, e.g. spine maths
 
 
 # ------------------------------------------------------- NLP extraction ----
@@ -110,7 +110,7 @@ class ExclusionNotice(BaseModel):
     writing instruments and ID cards are sourced/priced by hand.
     """
     excluded: bool = False
-    matched_terms: list[str] = []
+    matched_terms: list[str] = Field(default_factory=list)
     reason: str | None = None
 
 
@@ -121,8 +121,8 @@ class ExtractResponse(BaseModel):
     spec: Spec | None
     confidence_score: float
     needs_confirmation: bool
-    missing_fields: list[str] = []
-    exclusion: ExclusionNotice = ExclusionNotice()
+    missing_fields: list[str] = Field(default_factory=list)
+    exclusion: ExclusionNotice = Field(default_factory=ExclusionNotice)
     preview: PreviewConfig | None = None
 
 
@@ -149,7 +149,7 @@ class QuoteResponse(BaseModel):
     rush_fee_xaf: float
     tax_xaf: float
     total_xaf: float
-    warnings: list[str] = []
+    warnings: list[str] = Field(default_factory=list)
     preview: PreviewConfig | None = None
     created_at: datetime
 

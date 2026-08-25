@@ -1259,7 +1259,7 @@ function renderSpecForm() {
     } else {
       wrap.innerHTML = `${label}
         <input data-field="${def.key}" data-type="${def.type}" type="${def.type === 'number' ? 'number' : 'text'}"
-               value="${value ?? ''}" placeholder="not stated"
+           value="${escapeHtml(String(value ?? ''))}" placeholder="not stated"
                class="field-input ${isMissing ? 'missing' : ''}" />`;
     }
     grid.appendChild(wrap);

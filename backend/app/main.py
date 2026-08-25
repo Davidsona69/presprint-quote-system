@@ -31,6 +31,9 @@ app = FastAPI(
         "extraction vocabulary, cost matrix and parametric 3D preview geometry."
     ),
     version="0.2.0",
+    docs_url=None if settings.environment == "production" else "/docs",
+    redoc_url=None if settings.environment == "production" else "/redoc",
+    openapi_url=None if settings.environment == "production" else "/openapi.json",
     lifespan=lifespan,
 )
 

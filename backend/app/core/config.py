@@ -14,7 +14,10 @@ class Settings(BaseSettings):
     database_url: str = "postgresql+asyncpg://presprint:presprint@localhost:5432/presprint_quotes"
 
     # CORS
-    allowed_origins: list[str] = ["http://localhost:5173", "http://localhost:8080", "*"]
+    allowed_origins: list[str] = ["http://localhost:5173", "http://localhost:8080"]
+
+    # Required for staff-only order administration in production.
+    admin_api_key: str = ""
 
     # NLP confidence threshold below which we ask the user to confirm fields
     # manually in the frontend instead of trusting the extractor blindly.

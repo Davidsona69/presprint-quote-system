@@ -124,13 +124,19 @@ def book_spine_mm(spec: BookSpec, m: dict) -> float:
     """
     cfg = m["book"]
     d = cfg["defaults"]
-    pages = spec.page_count or d["page_count"]
+    pages = normalized_book_page_count(spec, m)
     interior_gsm = spec.interior_gsm or d["interior_gsm"]
     cover_gsm = spec.cover_gsm or d["cover_gsm"]
 
     leaves = math.ceil(pages / 2)
     caliper = cfg["caliper_mm_per_gsm"]
     return round(leaves * interior_gsm * caliper + 2 * cover_gsm * caliper, 2)
+
+
+def normalized_book_page_count(spec: BookSpec, m: dict) -> int:
+    """Return the press-ready page count shared by pricing and preview."""
+    pages = spec.page_count or m["book"]["defaults"]["page_count"]
+    return math.ceil(pages / 4) * 4
 
 
 def _price_book(spec: BookSpec, m: dict) -> tuple[list[CostLineItem], list[str]]:
@@ -140,13 +146,11 @@ def _price_book(spec: BookSpec, m: dict) -> tuple[list[CostLineItem], list[str]]
     warnings: list[str] = []
     qty = spec.quantity or 1
 
-    pages = spec.page_count or d["page_count"]
+    pages = normalized_book_page_count(spec, m)
     if spec.page_count is None:
         warnings.append(f"Page count not stated; priced at the {d['page_count']}-page default.")
-    if pages % 4 != 0:
-        rounded = math.ceil(pages / 4) * 4
-        warnings.append(f"Presses impose in 4-page signatures — {pages}pp rounded up to {rounded}pp.")
-        pages = rounded
+    elif pages != spec.page_count:
+        warnings.append(f"Presses impose in 4-page signatures — {spec.page_count}pp rounded up to {pages}pp.")
 
     trim = (spec.trim_size or d["trim_size"]).upper()
     if trim not in cfg["trim_sizes"]:

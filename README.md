@@ -62,6 +62,10 @@ parameters stay `null` — never guessed — and `missing_fields` tells the form
 what to ask for. Anything still blank at quote time is priced at a documented
 default and reported back in `warnings`.
 
+Request models reject non-positive or unreasonably large quantities, page
+counts, GSM values and colour counts. They also reject unsupported enum values
+instead of allowing the pricing engine to fail with a server error.
+
 **Excluded items.** Pens, pencils, markers and ID cards are sourced and priced
 by hand at Presprint. `/extract-specs` refuses them with a reason instead of
 inventing a price, and the UI routes the client to a staff member.
@@ -70,9 +74,9 @@ inventing a price, and the UI routes the client to a staff member.
 
 `/preview-model` returns the *parametric* geometry the price was built from,
 so the model on screen is dimensionally the job being quoted. A book's spine is
-`ceil(pages / 2) leaves × interior gsm × caliper + 2 cover boards` — the same
-function the pricing engine calls. Change the page count in the form and the
-spine thickens in the viewport as the price moves.
+`ceil(press-ready pages / 2) leaves × interior gsm × caliper + 2 cover boards`.
+Page counts are rounded up to the next four-page signature once and that same
+press-ready count is used by both the pricing engine and the viewport.
 
 The viewport degrades gracefully: no WebGL, or a CDN that won't load Three.js,
 falls back to a text readout of the same dimensions. Quoting never depends on it.
@@ -171,6 +175,11 @@ Book and paste `800 copies of a 128 page A5 novel, 80gsm interior, 250gsm gloss
 cover, perfect bound, black and white`. You should get a 3D book with a 7.03 mm
 spine and a total around 1,582,185 XAF.
 
+For local development, the database and backend are bound to `127.0.0.1`.
+Set `POSTGRES_PASSWORD`, `ENVIRONMENT` and `ADMIN_API_KEY` in a root `.env`
+file when overriding the Compose defaults. Never use the example password in a
+public deployment.
+
 ### 6. Stopping
 
 ```bash
@@ -229,15 +238,22 @@ This adds `nginx-proxy` in front of everything on port 80, using
 |---|---|
 | `/` | frontend |
 | `/api/` | backend, rate-limited to 10 r/s with burst 20 |
-| `/docs`, `/redoc`, `/openapi.json` | Swagger |
+| `/docs`, `/redoc`, `/openapi.json` | Swagger in development only |
 
-The frontend finds the API by probing same-origin `/api/health` at load time and
-falling back to `host:8000`, so the same `index.html` works behind the proxy, on
-plain compose, and on a non-standard proxy port — no build step, nothing to
-edit. Behind the proxy everything is same-origin, so CORS doesn't apply at all.
+The frontend finds the API by probing same-origin `/api/health` at load time
+and falling back to `host:8000`, so the same page works behind the proxy or on
+plain Compose without a build step. Behind the proxy everything is same-origin,
+so CORS does not apply.
 
 Before going live, add SSL: point a domain at the host and uncomment the `443`
 block in `infra/nginx.conf` with Let's Encrypt certs.
+
+Set `ENVIRONMENT=production` to disable Swagger/OpenAPI routes. The staff order
+listing, lookup, receipt and status endpoints require the `X-Admin-Key` header,
+whose value must match `ADMIN_API_KEY`. Customer order creation remains
+available through `POST /orders`, which returns the receipt directly. Keep the
+admin key out of frontend code and use a proper authentication system when
+multiple staff users or audit roles are required.
 
 ## Running without Docker
 
@@ -303,7 +319,7 @@ because the backend directory is mounted — commit it like any other file.
 | `port is already allocated` | an older stack is still up | `docker compose ls`, then `docker compose down` in that directory |
 | Header says **API offline** | backend still migrating, or it crashed | `docker compose logs backend` |
 | Header connected, but "Couldn't load the category matrices" | you're talking to an *older* backend on :8000 | `docker compose down` the stale stack, then bring this one up |
-| `relation "quotes" already exists` at start | the database predates Alembic | `docker compose down -v` for a clean start, or `docker compose exec backend alembic stamp head` to adopt it |
+| `relation "quotes" already exists` at start | the database predates Alembic | Back up the database, migrate its legacy columns into the current schema, then run `alembic upgrade head`; use `docker compose down -v` only when deleting local development data |
 | 3D preview says "unavailable" | no WebGL, or the Three.js CDN is unreachable | it's optional — quoting is unaffected; check the browser console |
 | Pricing endpoints fail after a rate edit | malformed JSON in the matrix | `python -m json.tool backend/pricing_matrix.json` |
 
@@ -316,6 +332,9 @@ because the backend directory is mounted — commit it like any other file.
 - [x] Parametric `/preview-model` + Three.js viewport
 - [x] JSONB parameter/breakdown/preview storage under Alembic
 - [x] `/orders` CRUD, receipt endpoint, printable receipt
+- [x] Input bounds and enum validation for quote requests
+- [x] Shared press-ready book page normalization for pricing and preview
+- [x] Staff key protection for order administration and production-only docs disablement
 - [x] Five-step frontend wizard
 - [ ] Real Presprint pricing data → `pricing_matrix.json`
 - [ ] UAT query logging → training data for `nlp/train_ner.py`

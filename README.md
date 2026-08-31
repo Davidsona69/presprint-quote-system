@@ -102,6 +102,46 @@ pricing data that early. This build instead:
 Deterministic pricing is auditable, which matters far more to a print shop's
 finance team than an ML black box.
 
+## Training the pricing model
+
+The proposal scoped a regression model that prices from historical sales, and
+that path is built: dataset schema, training, held-out evaluation, and serving
+— see [ml/README.md](ml/README.md).
+
+It is **off by default**, because a pricing model is only as accurate as the
+invoices it learns from and Presprint's history is not in this repo yet. The
+build is arranged so that state is safe rather than hidden:
+
+- The deterministic rate matrices price every job unless a model has earned the
+  right to adjust it.
+- A trained model does not replace them — it predicts a **multiplier** on the
+  rate-card subtotal, itemised on the quote as its own line, so the arithmetic
+  stays defensible.
+- A model that loses to the rate matrices on held-out invoices is **refused by
+  the API automatically**. Turning ML on cannot quietly make quotes worse.
+
+```bash
+# once: build the image with scikit-learn included
+docker compose build --build-arg INSTALL_ML=true backend
+
+# train on real invoices (ml/data/sales_history.example.csv documents the schema)
+docker compose exec backend python /ml/train_pricing.py /ml/data/sales_history.csv
+
+# if it beat the rate matrices, switch it on
+ML_PRICING_ENABLED=true docker compose up -d
+```
+
+`GET /health` reports which engine is live and why; every quote carries
+`pricing_method`, `deterministic_subtotal_xaf` and `ml_multiplier`.
+
+What needs training, and what does not:
+
+| | Trained? | Needs |
+|---|---|---|
+| NLP extractor | eventually — currently rule-based | annotated *text* queries (`nlp/train_ner.py`) |
+| Pricing | optional adjustment layer | historical *invoices* with the price actually charged |
+| Rate matrices | never | an interview with Presprint |
+
 ## Running it on Docker
 
 Everything — Postgres, the API, the matrices and the frontend — comes up with

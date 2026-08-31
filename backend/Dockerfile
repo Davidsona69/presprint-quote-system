@@ -8,8 +8,14 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     curl \
     && rm -rf /var/lib/apt/lists/*
 
-COPY requirements.txt .
+COPY requirements.txt requirements-ml.txt ./
 RUN pip install --no-cache-dir -r requirements.txt
+
+# ML pricing is opt-in: `docker compose build --build-arg INSTALL_ML=true`.
+# Off by default because scikit-learn et al add ~1.5GB and the deterministic
+# engine needs none of it.
+ARG INSTALL_ML=false
+RUN if [ "$INSTALL_ML" = "true" ]; then pip install --no-cache-dir -r requirements-ml.txt; fi
 
 COPY . .
 

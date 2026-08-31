@@ -30,6 +30,7 @@ from pathlib import Path
 
 from app.core.config import settings
 from app.schemas.schemas import BenchmarkSpec, BookSpec, CostLineItem, MerchSpec, Spec
+from app.services import ml_pricing
 
 # PRICING_MATRIX_PATH lets a deployment mount the matrix as a config volume, so
 # staff can change rates without rebuilding the image. Defaults to the copy
@@ -331,8 +332,31 @@ def calculate_quote(spec: Spec) -> dict:
     common = m["common"]
 
     line_items, warnings = _ENGINES[spec.category](spec, m)
-    subtotal = sum(li.amount_xaf for li in line_items)
+    deterministic_subtotal = sum(li.amount_xaf for li in line_items)
+    subtotal = deterministic_subtotal
     qty = spec.quantity or 1
+
+    # Optional learned adjustment. The deterministic line items stay exactly as
+    # they are — the model corrects the *total* to match what Presprint has
+    # historically charged, and that correction is shown as its own line so the
+    # quote is still explainable. Returns None whenever no trustworthy model is
+    # loaded, which is the default.
+    pricing_method = "deterministic"
+    ml_multiplier = None
+    adjustment = ml_pricing.adjust(spec, deterministic_subtotal)
+    if adjustment:
+        warnings.extend(adjustment["warnings"])
+        if adjustment["applied"]:
+            subtotal = adjustment["subtotal_xaf"]
+            ml_multiplier = adjustment["multiplier"]
+            pricing_method = "ml_adjusted"
+            delta = round(subtotal - deterministic_subtotal, 2)
+            line_items.append(CostLineItem(
+                label=f"Market adjustment ({ml_multiplier:.2f}x)",
+                amount_xaf=delta,
+                detail=(f"learned from historical invoices; rate-card subtotal "
+                        f"{deterministic_subtotal:,.0f} XAF"),
+            ))
 
     # Volume discount — highest matching tier wins.
     discount_percent = 0.0
@@ -351,6 +375,9 @@ def calculate_quote(spec: Spec) -> dict:
     return {
         "category": spec.category,
         "breakdown": [li.model_dump() for li in line_items],
+        "pricing_method": pricing_method,
+        "deterministic_subtotal_xaf": round(deterministic_subtotal, 2),
+        "ml_multiplier": ml_multiplier,
         "subtotal_xaf": round(subtotal, 2),
         "discount_xaf": round(discount_xaf, 2),
         "rush_fee_xaf": round(rush_fee_xaf, 2),

@@ -144,6 +144,14 @@ class QuoteResponse(BaseModel):
     id: str
     category: Category
     breakdown: list[CostLineItem]
+
+    # "deterministic" = priced from the rate matrices alone.
+    # "ml_adjusted"   = a trained model corrected the total; the correction is
+    #                   itemised in `breakdown` and `ml_multiplier` is set.
+    pricing_method: str = "deterministic"
+    deterministic_subtotal_xaf: float | None = None
+    ml_multiplier: float | None = None
+
     subtotal_xaf: float
     discount_xaf: float
     rush_fee_xaf: float

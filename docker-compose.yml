@@ -17,7 +17,11 @@ services:
       retries: 5
 
   backend:
-    build: ./backend
+    build:
+      context: ./backend
+      args:
+        # Set to "true" to bake scikit-learn in so ML pricing can run.
+        INSTALL_ML: "${INSTALL_ML:-false}"
     restart: unless-stopped
     depends_on:
       db:
@@ -29,6 +33,10 @@ services:
       # Rate matrices are read from here, not from the image, so staff can
       # edit prices without a rebuild. See the mount below.
       PRICING_MATRIX_PATH: /config/pricing_matrix.json
+      # ML pricing stays off until a model has been trained on real invoices
+      # and has beaten the rate matrices — see ml/README.md.
+      ML_PRICING_ENABLED: "${ML_PRICING_ENABLED:-false}"
+      ML_MODEL_PATH: /ml/models/price_model.joblib
     ports:
       - "127.0.0.1:8000:8000"
     volumes:
@@ -36,6 +44,9 @@ services:
       # The matrix, mounted read-only as config. Edit ./backend/pricing_matrix.json
       # on the host and `docker compose restart backend` to apply.
       - ./backend/pricing_matrix.json:/config/pricing_matrix.json:ro
+      # Training data and model artifacts. Mounted (not baked in) so a model
+      # retrained on the host is picked up without rebuilding the image.
+      - ./ml:/ml
     healthcheck:
       test: ["CMD-SHELL", "curl -fsS http://localhost:8000/health || exit 1"]
       interval: 10s

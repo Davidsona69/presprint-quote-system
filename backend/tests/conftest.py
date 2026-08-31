@@ -30,7 +30,14 @@ async def _create_tables():
     httpx's ASGITransport doesn't trigger FastAPI's lifespan (startup) events,
     so table creation in app.main's lifespan never runs under test. Do it here
     instead, once per test.
+
+    The dispose() on teardown matters: `engine` is a module-level singleton, but
+    pytest-asyncio gives each test a fresh event loop. Pooled asyncpg
+    connections stay bound to the loop that opened them, so without this every
+    test after the first fails with "attached to a different loop" against
+    Postgres. SQLite happens to tolerate it; CI does not.
     """
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
     yield
+    await engine.dispose()

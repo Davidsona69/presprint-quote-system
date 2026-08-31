@@ -1,18 +1,21 @@
-# Upgrade-path dependencies — NOT part of the running system.
+# Dependencies for the trainable model paths. NOT installed by default.
 #
-#   pip install -r requirements.txt -r requirements-ml.txt
+#   Docker:  docker compose build --build-arg INSTALL_ML=true backend
+#   Native:  pip install -r requirements.txt -r requirements-ml.txt
 #
-# Needed only when you start on:
-#   nlp/train_ner.py  — v2 spaCy NER, once UAT has produced annotated data
-#   ml/README.md      — cost-adjustment regression, once real job history exists
-#
-# See the README's "Why rule-based NLP + deterministic pricing" section: the
-# MVP ships without these on purpose.
+# Needed for:
+#   ml/train_pricing.py            pricing model (needs real invoice history)
+#   app/services/ml_pricing.py     serving that model
+#   nlp/train_ner.py               v2 spaCy NER (needs annotated queries)
 
-# NLP (Phase 2 upgrade path — the rule-based extractor needs none of this)
-spacy==3.7.5
-
-# ML (Phase 3 stretch goal, only if real historical job data exists)
+# --- ML pricing -----------------------------------------------------------
+# HistGradientBoostingRegressor ships with scikit-learn and handles NaN and
+# categorical features natively, so no separate gradient-boosting library and
+# no pandas are required. joblib and numpy come in with scikit-learn; they are
+# pinned here because the inference path imports them directly.
 scikit-learn==1.5.2
-xgboost==2.1.1
-pandas==2.2.3
+joblib==1.4.2
+numpy==2.0.2
+
+# --- v2 NLP ---------------------------------------------------------------
+spacy==3.7.5

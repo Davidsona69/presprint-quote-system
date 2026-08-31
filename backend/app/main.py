@@ -7,6 +7,7 @@ from fastapi.staticfiles import StaticFiles
 from app.core.config import settings
 from app.core.database import engine, Base
 from app.routers import extract, meta, orders, preview, quote
+from app.services import ml_pricing
 
 # import models so Base.metadata knows about them before create_all
 from app.models import models  # noqa: F401
@@ -54,4 +55,11 @@ app.include_router(orders.router)
 
 @app.get("/health", tags=["System"])
 async def health():
-    return {"status": "ok", "app": settings.app_name}
+    return {
+        "status": "ok",
+        "app": settings.app_name,
+        # Which engine is pricing right now, and why. `active: false` with a
+        # reason is the normal state until a model has been trained on real
+        # invoices and has beaten the rate matrices.
+        "pricing_model": ml_pricing.status(),
+    }

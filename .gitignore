@@ -11,3 +11,7 @@ db_data/
 
 # Local database dumps taken before schema changes — keep out of the repo.
 backups/
+ml/models/*.joblib
+ml/models/*.metrics.json
+ml/data/synthetic.csv
+.venv*/

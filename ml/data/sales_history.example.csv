@@ -1,0 +1,10 @@
+category,item_type,quantity,page_count,trim_size,interior_gsm,cover_gsm,binding,cover_finish,color_mode,paper_size,paper_gsm,paper_finish,print_side,print_method,color_count,garment_size,placements,finishing,urgency,final_price_xaf
+book,novel,800,128,A5,80,250,perfect,glossy,black_white,,,,,,,,,,standard,1650000
+book,textbook,1200,240,A4,70,300,case,matte,full_color,,,,,,,,,lamination,standard,9800000
+book,exercise book,3000,64,A4,60,200,saddle_stitch,uncoated,black_white,,,,,,,,,,high,4100000
+merch,shirt,150,,,,,,,,,,,,screen,3,L,front|back,,standard,780000
+merch,mug,60,,,,,,,,,,,,sublimation,4,,wrap,,high,205000
+merch,cap,200,,,,,,,,,,,,embroidery,2,,front,,standard,690000
+benchmark,flyer,500,,,,,,full_color,A4,130,glossy,double,,,,,,standard,128000
+benchmark,business card,1000,,,,,,full_color,A6,300,matte,double,,,,,lamination,standard,96000
+benchmark,poster,50,,,,,,full_color,A2,170,glossy,single,,,,,,high,215000

@@ -1,0 +1,12 @@
+category,item_type,quantity,paper_size,paper_gsm,paper_finish,print_side,color_mode,page_count,trim_size,interior_gsm,cover_gsm,binding,cover_finish,print_method,color_count,garment_size,placements,finishing,urgency,price,currency
+benchmark,business card,100,A6,300,matte,double,full_color,,,,,,,,,,,,standard,9500,NGN
+benchmark,business card,500,A6,300,matte,double,full_color,,,,,,,,,,,,standard,28000,NGN
+benchmark,business card,1000,A6,300,matte,double,full_color,,,,,,,,,,,lamination,standard,46000,NGN
+benchmark,flyer,500,A5,130,glossy,double,full_color,,,,,,,,,,,,standard,32000,NGN
+benchmark,flyer,1000,A5,130,glossy,double,full_color,,,,,,,,,,,,standard,55000,NGN
+benchmark,poster,50,A2,170,glossy,single,full_color,,,,,,,,,,,,standard,41000,NGN
+merch,shirt,50,,,,,,,,,,,,screen,1,L,front,,standard,185000,NGN
+merch,shirt,100,,,,,,,,,,,,screen,2,L,front|back,,standard,340000,NGN
+merch,mug,50,,,,,,,,,,,,sublimation,4,,wrap,,standard,120000,NGN
+book,exercise book,500,,,,,black_white,64,A4,60,200,saddle_stitch,uncoated,,,,,,standard,410000,NGN
+book,novel,500,,,,,black_white,128,A5,80,250,perfect,glossy,,,,,,standard,720000,NGN

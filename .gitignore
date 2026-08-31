@@ -15,3 +15,6 @@ ml/models/*.joblib
 ml/models/*.metrics.json
 ml/data/synthetic.csv
 .venv*/
+ml/data/market_training.csv
+ml/data/*.csv
+!ml/data/*.example.csv

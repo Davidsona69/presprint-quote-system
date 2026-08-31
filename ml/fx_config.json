@@ -1,0 +1,43 @@
+{
+  "_comment": "Currency conversion for market-derived price lists. Edit the rate before any run that matters — see 'as_of'.",
+
+  "base_currency": "XAF",
+
+  "xaf_eur_peg": 655.957,
+  "_peg_note": "XAF is pegged to the euro at a fixed 655.957 XAF = 1 EUR. Anything quoted in EUR converts exactly and never goes stale. Floating currencies below do go stale.",
+
+  "rates": {
+    "NGN": {
+      "xaf_per_unit": 0.39473,
+      "as_of": "2026-08-22",
+      "source": "xe.com / wise.com mid-market",
+      "range_52w": [0.33233, 0.40641],
+      "_note": "The naira floats, so this moves. A 52-week swing of 0.332-0.406 is a ~22% spread — a model trained on naira-derived prices drifts as the rate moves. Re-run the import with a fresh rate rather than retraining on stale numbers."
+    },
+    "XOF": {
+      "xaf_per_unit": 1.0,
+      "as_of": "fixed",
+      "source": "Both CFA francs are pegged to EUR at the same rate",
+      "_note": "West African CFA (Senegal, Cote d'Ivoire, ...) is 1:1 with XAF by construction."
+    },
+    "EUR": { "xaf_per_unit": 655.957, "as_of": "fixed", "source": "CFA franc peg" },
+    "USD": {
+      "xaf_per_unit": 566.0,
+      "as_of": "2026-08-22",
+      "source": "approximate mid-market; verify before use",
+      "_note": "Moves with EUR/USD since XAF is euro-pegged."
+    },
+    "XAF": { "xaf_per_unit": 1.0, "as_of": "fixed", "source": "base currency" }
+  },
+
+  "market_adjustment": {
+    "_comment": "FX alone is NOT a price conversion. A Lagos print e-commerce operation and a Limbe print shop face different paper import costs, labour rates, electricity, scale and competition. This factor is applied AFTER the FX conversion to bridge that gap. 1.0 means 'assume identical economics', which is certainly wrong but at least it is explicit. Calibrate it: price 5-10 identical jobs at both, take the median ratio, put it here, and write down how you got it.",
+    "default": {
+      "factor": 1.0,
+      "calibrated": false,
+      "rationale": "UNCALIBRATED placeholder. Prices converted with this are FX-only and should not be presented as Cameroonian market rates."
+    }
+  },
+
+  "staleness_warning_days": 30
+}

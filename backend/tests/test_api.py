@@ -326,8 +326,9 @@ async def test_order_flow_produces_a_receipt(client):
         assert r["parameters"]["paper_size"] == "A5"
         assert r["status"] == "pending"
 
-        fetched = await ac.get(f"/orders/{r['order_id']}/receipt")
-        assert fetched.json()["order_id"] == r["order_id"]
+        # Re-fetching a receipt is staff-only now; the customer got theirs in
+        # the POST response above, which is the only copy they need.
+        assert (await ac.get(f"/orders/{r['order_id']}/receipt")).status_code in (401, 503)
 
 
 @pytest.mark.asyncio

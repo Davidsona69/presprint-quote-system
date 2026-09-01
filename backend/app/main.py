@@ -6,7 +6,7 @@ from fastapi.staticfiles import StaticFiles
 
 from app.core.config import settings
 from app.core.database import engine, Base
-from app.routers import extract, meta, orders, preview, quote
+from app.routers import admin, extract, meta, orders, preview, quote
 from app.services import ml_pricing
 
 # import models so Base.metadata knows about them before create_all
@@ -44,6 +44,10 @@ app.add_middleware(
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
+    # Without this, a cross-origin browser can only read the handful of "simple"
+    # response headers — so the back office could not see the filename the
+    # server chose for an export, nor how many rows it contained.
+    expose_headers=["Content-Disposition", "X-Row-Count"],
 )
 
 app.include_router(meta.router)
@@ -51,6 +55,7 @@ app.include_router(extract.router)
 app.include_router(preview.router)
 app.include_router(quote.router)
 app.include_router(orders.router)
+app.include_router(admin.router)
 
 
 @app.get("/health", tags=["System"])

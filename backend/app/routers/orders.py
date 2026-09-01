@@ -1,23 +1,16 @@
 import uuid
 from typing import Annotated, Literal
 
-from fastapi import APIRouter, Depends, Header, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db, utcnow
-from app.core.config import settings
+from app.core.security import AdminOnly
 from app.models.models import Order, Quote
 from app.schemas.schemas import OrderCreate, OrderResponse, OrderReceiptResponse, CostLineItem
 
 router = APIRouter(prefix="/orders", tags=["Orders"])
-
-
-async def require_staff(x_admin_key: Annotated[str | None, Header()] = None) -> None:
-    if settings.environment == "development":
-        return
-    if not settings.admin_api_key or x_admin_key != settings.admin_api_key:
-        raise HTTPException(status_code=403, detail="Staff authorization required")
 
 
 def _to_receipt(order: Order, quote: Quote) -> OrderReceiptResponse:
@@ -63,7 +56,7 @@ async def create_order(payload: OrderCreate, db: AsyncSession = Depends(get_db))
 @router.get("", response_model=list[OrderResponse])
 async def list_orders(
     db: AsyncSession = Depends(get_db),
-    _: None = Depends(require_staff),
+    _: None = AdminOnly,
 ):
     result = await db.execute(select(Order).order_by(Order.created_at.desc()))
     return result.scalars().all()
@@ -73,7 +66,7 @@ async def list_orders(
 async def get_order(
     order_id: str,
     db: AsyncSession = Depends(get_db),
-    _: None = Depends(require_staff),
+    _: None = AdminOnly,
 ):
     order = await db.get(Order, order_id)
     if not order:
@@ -85,7 +78,7 @@ async def get_order(
 async def get_order_receipt(
     order_id: str,
     db: AsyncSession = Depends(get_db),
-    _: None = Depends(require_staff),
+    _: None = AdminOnly,
 ):
     order = await db.get(Order, order_id)
     if not order:
@@ -101,7 +94,7 @@ async def update_status(
     order_id: str,
     status: Literal["pending", "confirmed", "in_production", "done"],
     db: AsyncSession = Depends(get_db),
-    _: None = Depends(require_staff),
+    _: None = AdminOnly,
 ):
     order = await db.get(Order, order_id)
     if not order:

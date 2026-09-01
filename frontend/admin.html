@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex, nofollow">
+<title>Presprint — Back Office</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --paper:#F5F6F8; --surface:#FFFFFF; --ink:#12141C; --ink-soft:#5B6072;
+    --ink-faint:#9298A8; --line:#E4E6EC; --line-strong:#CDD1DC;
+    --cyan:#00AEEF; --orange:#F4620F; --success:#16A34A; --danger:#DC2626;
+  }
+  *{font-family:'IBM Plex Sans',sans-serif}
+  .display{font-family:'Space Grotesk',sans-serif}
+  .mono{font-family:'IBM Plex Mono',monospace}
+  body{background:var(--paper);color:var(--ink)}
+  :focus-visible{outline:2px solid var(--cyan);outline-offset:2px;border-radius:2px}
+  .card{background:var(--surface);border:1px solid var(--line);border-radius:16px;
+    box-shadow:0 1px 2px rgba(18,20,28,.04),0 8px 24px -12px rgba(18,20,28,.08)}
+  .field-label{font-size:.7rem;font-weight:600;letter-spacing:.06em;text-transform:uppercase;
+    color:var(--ink-soft);display:block;margin-bottom:6px}
+  .field-input{width:100%;background:var(--surface);border:1.5px solid var(--line);
+    border-radius:10px;padding:9px 13px;font-size:.875rem;color:var(--ink);
+    transition:border-color .15s,box-shadow .15s}
+  .field-input:hover{border-color:var(--line-strong)}
+  .field-input:focus{outline:none;border-color:var(--cyan);box-shadow:0 0 0 3px rgba(0,174,239,.14)}
+  select.field-input{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='%235B6072' d='M1 1l5 5 5-5'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center;padding-right:32px}
+  .btn{display:inline-flex;align-items:center;justify-content:center;gap:7px;font-weight:600;
+    font-size:.85rem;border-radius:10px;padding:10px 16px;cursor:pointer;
+    transition:transform .12s,box-shadow .15s,background .15s,opacity .15s}
+  .btn:active{transform:scale(.98)}
+  .btn:disabled{opacity:.55;cursor:not-allowed;transform:none}
+  .btn-primary{background:var(--ink);color:#fff}
+  .btn-primary:hover:not(:disabled){background:#262A38}
+  .btn-ghost{background:transparent;color:var(--ink-soft);border:1.5px solid var(--line)}
+  .btn-ghost:hover:not(:disabled){border-color:var(--line-strong);background:var(--paper);color:var(--ink)}
+  .tile{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:16px 18px}
+  .tile .n{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:1.6rem;line-height:1.1}
+  .tile .k{font-size:.68rem;text-transform:uppercase;letter-spacing:.07em;color:var(--ink-faint);margin-bottom:6px}
+  table{width:100%;border-collapse:collapse}
+  th{font-size:.66rem;text-transform:uppercase;letter-spacing:.07em;color:var(--ink-faint);
+    text-align:left;padding:9px 12px;border-bottom:1px solid var(--line);white-space:nowrap;font-weight:600}
+  td{padding:11px 12px;border-bottom:1px solid var(--line);font-size:.83rem;vertical-align:top}
+  tbody tr:hover{background:var(--paper)}
+  .num{text-align:right;font-family:'IBM Plex Mono',monospace;white-space:nowrap}
+  th.num{text-align:right}
+  .pill{display:inline-block;font-size:.66rem;padding:2px 8px;border-radius:999px;
+    background:var(--paper);border:1px solid var(--line);color:var(--ink-soft);white-space:nowrap}
+  .pill.ok{background:#F0FDF4;border-color:#BBF7D0;color:#15803D}
+  .truncate-q{max-width:340px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--ink-soft)}
+  .tab{padding:8px 14px;border-radius:999px;font-size:.8rem;font-weight:600;color:var(--ink-faint);
+    border:1.5px solid transparent;cursor:pointer}
+  .tab.active{background:var(--surface);border-color:var(--line-strong);color:var(--ink)}
+  .spinner{width:14px;height:14px;border:2px solid currentColor;border-top-color:transparent;
+    border-radius:50%;animation:spin .7s linear infinite}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  @media (prefers-reduced-motion: reduce){*{animation-duration:.01ms!important;transition-duration:.01ms!important}}
+</style>
+</head>
+<body class="min-h-screen">
+
+<!-- ============ Login ============ -->
+<div id="gate" class="min-h-screen flex items-center justify-center p-5">
+  <div class="card w-full max-w-sm p-7">
+    <div class="flex items-center gap-3">
+      <img src="assets/logo.png" width="52" height="33" alt="Presprint">
+      <div>
+        <h1 class="display font-bold text-lg leading-none">Back Office</h1>
+        <p class="text-[10px] uppercase tracking-widest text-[var(--ink-faint)] mt-1">Staff access only</p>
+      </div>
+    </div>
+    <p class="text-sm text-[var(--ink-soft)] mt-5">
+      Quote and order history, including client contact details. Enter the admin key to continue.
+    </p>
+    <form id="gate-form" class="mt-5">
+      <label for="key-input" class="field-label">Admin key</label>
+      <input id="key-input" type="password" class="field-input mono" autocomplete="current-password" required>
+      <label class="flex items-center gap-2 mt-3 text-xs text-[var(--ink-soft)]">
+        <input type="checkbox" id="remember"> Keep me signed in on this device
+      </label>
+      <button id="gate-btn" class="btn btn-primary w-full mt-4" type="submit">
+        <span class="btn-label">Sign in</span>
+      </button>
+      <p id="gate-error" class="text-[var(--danger)] text-sm mt-3 hidden"></p>
+    </form>
+    <p class="text-[11px] text-[var(--ink-faint)] mt-5 leading-relaxed">
+      Not configured yet? Set <code class="mono">ADMIN_API_KEY</code> on the backend and restart.
+      Generate one with <code class="mono">openssl rand -hex 32</code>.
+    </p>
+  </div>
+</div>
+
+<!-- ============ Dashboard ============ -->
+<div id="app" class="hidden">
+  <header class="sticky top-0 z-30 backdrop-blur-md bg-white/80 border-b border-[var(--line)]">
+    <div class="max-w-7xl mx-auto px-5 sm:px-7 flex justify-between items-center py-3">
+      <div class="flex items-center gap-3">
+        <img src="assets/logo.png" width="48" height="30" alt="Presprint">
+        <div>
+          <h1 class="display font-bold text-base leading-none">Back Office</h1>
+          <p class="text-[10px] uppercase tracking-widest text-[var(--ink-faint)] mt-0.5">Quote &amp; order history</p>
+        </div>
+      </div>
+      <div class="flex items-center gap-2">
+        <a href="index.html" class="btn btn-ghost">Quote engine</a>
+        <button id="signout" class="btn btn-ghost">Sign out</button>
+      </div>
+    </div>
+  </header>
+
+  <main class="max-w-7xl mx-auto px-5 sm:px-7 py-6">
+    <div id="tiles" class="grid grid-cols-2 lg:grid-cols-5 gap-3 mb-6"></div>
+
+    <div class="card overflow-hidden">
+      <div class="flex flex-wrap items-center gap-2 p-4 border-b border-[var(--line)]">
+        <button class="tab active" data-tab="quotes">Quotes</button>
+        <button class="tab" data-tab="orders">Orders</button>
+        <div class="flex-1"></div>
+        <button id="export-csv" class="btn btn-ghost"><span class="btn-label">Export CSV</span></button>
+        <button id="export-json" class="btn btn-ghost"><span class="btn-label">Export JSON</span></button>
+      </div>
+
+      <div class="grid sm:grid-cols-2 lg:grid-cols-5 gap-3 p-4 border-b border-[var(--line)] bg-[var(--paper)]">
+        <div><label class="field-label" for="f-q">Search</label>
+          <input id="f-q" class="field-input" placeholder="request text, client…"></div>
+        <div><label class="field-label" for="f-category">Category</label>
+          <select id="f-category" class="field-input">
+            <option value="">All</option><option value="book">Book</option>
+            <option value="merch">Merch</option><option value="benchmark">Benchmark</option>
+          </select></div>
+        <div id="wrap-status" class="hidden"><label class="field-label" for="f-status">Status</label>
+          <select id="f-status" class="field-input">
+            <option value="">All</option><option value="pending">Pending</option>
+            <option value="confirmed">Confirmed</option><option value="in_production">In production</option>
+            <option value="done">Done</option>
+          </select></div>
+        <div><label class="field-label" for="f-from">From</label>
+          <input id="f-from" type="date" class="field-input"></div>
+        <div><label class="field-label" for="f-to">To</label>
+          <input id="f-to" type="date" class="field-input"></div>
+      </div>
+
+      <div class="overflow-x-auto"><table><thead id="thead"></thead><tbody id="tbody"></tbody></table></div>
+
+      <div class="flex flex-wrap items-center justify-between gap-3 p-4 border-t border-[var(--line)]">
+        <span id="range" class="text-xs text-[var(--ink-soft)]">—</span>
+        <div class="flex gap-2">
+          <button id="prev" class="btn btn-ghost">← Previous</button>
+          <button id="next" class="btn btn-ghost">Next →</button>
+        </div>
+      </div>
+    </div>
+    <p id="err" class="text-[var(--danger)] text-sm mt-4 hidden"></p>
+  </main>
+</div>
+
+<script type="module">
+// ===========================================================================
+//  Presprint back office
+//
+//  Read-only history over /admin/*, every call carrying the admin key. The key
+//  lives in sessionStorage by default so closing the tab signs you out; the
+//  "keep me signed in" box moves it to localStorage instead. It is never put
+//  in a URL, so it cannot leak through browser history, proxy logs or a
+//  screenshot of the address bar — which is also why exports are fetched and
+//  turned into a Blob rather than opened as a download link.
+// ===========================================================================
+
+// Probe the proxied path first, exactly as the quote engine does.
+async function apiBase() {
+  const override = new URLSearchParams(location.search).get('api');
+  if (override) return override.replace(/\/$/, "");
+  if (location.protocol.startsWith('http')) {
+    try {
+      const proxied = `${location.origin}/api`;
+      if ((await fetch(`${proxied}/health`, { cache: 'no-store' })).ok) return proxied;
+    } catch {}
+  }
+  return `${location.protocol}//${location.hostname}:8000`;
+}
+const API = await apiBase();
+
+const $ = id => document.getElementById(id);
+const KEY_NAME = 'presprint_admin_key';
+const fmtXAF = n => `${Number(n||0).toLocaleString('en-US',{maximumFractionDigits:0})}`;
+const esc = s => { const d=document.createElement('div'); d.textContent = s ?? ""; return d.innerHTML; };
+const fmtDate = s => new Date(s).toLocaleString(undefined,
+  {year:'numeric',month:'short',day:'2-digit',hour:'2-digit',minute:'2-digit'});
+
+let adminKey = sessionStorage.getItem(KEY_NAME) || localStorage.getItem(KEY_NAME) || "";
+const state = { tab:'quotes', limit:25, offset:0, total:0 };
+
+function authHeaders() { return { 'X-Admin-Key': adminKey }; }
+
+async function api(path, params = {}) {
+  const url = new URL(API + path, location.href);
+  for (const [k,v] of Object.entries(params)) if (v !== "" && v != null) url.searchParams.set(k,v);
+  const res = await fetch(url, { headers: authHeaders(), cache:'no-store' });
+  if (res.status === 401) { signOut("Session rejected — sign in again."); throw new Error("unauthorised"); }
+  if (!res.ok) {
+    let detail = res.statusText;
+    try { detail = (await res.json()).detail || detail; } catch {}
+    throw new Error(detail);
+  }
+  return res;
+}
+
+// ------------------------------------------------------------ sign in ----
+
+function showGate(msg) {
+  $('gate').classList.remove('hidden');
+  $('app').classList.add('hidden');
+  if (msg) { $('gate-error').textContent = msg; $('gate-error').classList.remove('hidden'); }
+}
+function showApp() { $('gate').classList.add('hidden'); $('app').classList.remove('hidden'); }
+
+function signOut(msg) {
+  adminKey = "";
+  sessionStorage.removeItem(KEY_NAME);
+  localStorage.removeItem(KEY_NAME);
+  showGate(msg);
+}
+
+$('gate-form').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const candidate = $('key-input').value.trim();
+  if (!candidate) return;
+  const btn = $('gate-btn');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span>Checking…';
+  $('gate-error').classList.add('hidden');
+  try {
+    const res = await fetch(`${API}/admin/session`, { headers: { 'X-Admin-Key': candidate } });
+    if (res.status === 503) throw new Error((await res.json()).detail);
+    if (!res.ok) throw new Error("That key was not accepted.");
+    adminKey = candidate;
+    ($('remember').checked ? localStorage : sessionStorage).setItem(KEY_NAME, candidate);
+    $('key-input').value = "";
+    showApp();
+    await refresh();
+  } catch (err) {
+    $('gate-error').textContent = err.message;
+    $('gate-error').classList.remove('hidden');
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = '<span class="btn-label">Sign in</span>';
+  }
+});
+
+$('signout').addEventListener('click', () => signOut());
+
+// ------------------------------------------------------------ filters ----
+
+const filters = () => ({
+  q: $('f-q').value.trim(),
+  category: $('f-category').value,
+  status: state.tab === 'orders' ? $('f-status').value : "",
+  date_from: $('f-from').value,
+  date_to: $('f-to').value,
+});
+
+let debounce;
+['f-q','f-category','f-status','f-from','f-to'].forEach(id =>
+  $(id).addEventListener('input', () => {
+    clearTimeout(debounce);
+    debounce = setTimeout(() => { state.offset = 0; refresh(); }, 280);
+  }));
+
+document.querySelectorAll('.tab').forEach(t => t.addEventListener('click', () => {
+  document.querySelectorAll('.tab').forEach(x => x.classList.toggle('active', x === t));
+  state.tab = t.dataset.tab;
+  state.offset = 0;
+  $('wrap-status').classList.toggle('hidden', state.tab !== 'orders');
+  refresh();
+}));
+
+$('prev').addEventListener('click', () => {
+  state.offset = Math.max(0, state.offset - state.limit); refresh();
+});
+$('next').addEventListener('click', () => {
+  if (state.offset + state.limit < state.total) { state.offset += state.limit; refresh(); }
+});
+
+// ------------------------------------------------------------- render ----
+
+const TILES = s => [
+  ['Quotes', s.quotes_total],
+  ['Last 30 days', s.quotes_last_30_days],
+  ['Orders', s.orders_total],
+  ['Conversion', `${s.conversion_percent}%`],
+  ['Ordered value', `${fmtXAF(s.ordered_value_xaf)} XAF`],
+];
+
+function renderTiles(s) {
+  $('tiles').innerHTML = TILES(s).map(([k,v]) =>
+    `<div class="tile"><div class="k">${esc(k)}</div><div class="n">${esc(String(v))}</div></div>`).join("");
+}
+
+const QUOTE_HEAD = ['Date','Category','Request','Confidence','Subtotal','Discount','Tax','Total','Ordered'];
+const ORDER_HEAD = ['Date','Status','Client','Contact','Category','Request','Total'];
+
+function renderRows(items) {
+  const head = state.tab === 'quotes' ? QUOTE_HEAD : ORDER_HEAD;
+  const numeric = new Set(['Confidence','Subtotal','Discount','Tax','Total']);
+  $('thead').innerHTML = '<tr>' + head.map(h =>
+    `<th class="${numeric.has(h) ? 'num' : ''}">${h}</th>`).join("") + '</tr>';
+
+  if (!items.length) {
+    $('tbody').innerHTML = `<tr><td colspan="${head.length}" class="text-center py-10 text-[var(--ink-faint)]">
+      No ${state.tab} match these filters.</td></tr>`;
+    return;
+  }
+
+  $('tbody').innerHTML = items.map(r => state.tab === 'quotes' ? `
+    <tr>
+      <td class="mono text-[.76rem] whitespace-nowrap">${fmtDate(r.created_at)}</td>
+      <td><span class="pill">${esc(r.category || '—')}</span></td>
+      <td><div class="truncate-q" title="${esc(r.raw_query || '')}">${esc(r.raw_query || '—')}</div></td>
+      <td class="num">${r.confidence_score == null ? '—' : Math.round(r.confidence_score*100)+'%'}</td>
+      <td class="num">${fmtXAF(r.subtotal_xaf)}</td>
+      <td class="num text-[var(--success)]">${r.discount_xaf ? '−'+fmtXAF(r.discount_xaf) : '—'}</td>
+      <td class="num">${fmtXAF(r.tax_xaf)}</td>
+      <td class="num font-semibold">${fmtXAF(r.total_xaf)}</td>
+      <td>${r.order_count ? '<span class="pill ok">ordered</span>' : '<span class="pill">quote only</span>'}</td>
+    </tr>` : `
+    <tr>
+      <td class="mono text-[.76rem] whitespace-nowrap">${fmtDate(r.created_at)}</td>
+      <td><span class="pill">${esc(r.status)}</span></td>
+      <td>${esc(r.client_name || 'Walk-in')}</td>
+      <td class="mono text-[.78rem]">${esc(r.client_contact || '—')}</td>
+      <td><span class="pill">${esc(r.category || '—')}</span></td>
+      <td><div class="truncate-q" title="${esc(r.raw_query || '')}">${esc(r.raw_query || '—')}</div></td>
+      <td class="num font-semibold">${fmtXAF(r.total_xaf)}</td>
+    </tr>`).join("");
+}
+
+async function refresh() {
+  if (!adminKey) return showGate();
+  $('err').classList.add('hidden');
+  try {
+    const [stats, page] = await Promise.all([
+      api('/admin/stats').then(r => r.json()),
+      api(`/admin/${state.tab}`, { ...filters(), limit: state.limit, offset: state.offset })
+        .then(r => r.json()),
+    ]);
+    renderTiles(stats);
+    renderRows(page.items);
+    state.total = page.total;
+
+    const from = page.total ? state.offset + 1 : 0;
+    const to = Math.min(state.offset + state.limit, page.total);
+    $('range').textContent = `${from}–${to} of ${page.total} ${state.tab}`;
+    $('prev').disabled = state.offset === 0;
+    $('next').disabled = state.offset + state.limit >= page.total;
+  } catch (err) {
+    if (err.message === "unauthorised") return;
+    $('err').textContent = `Could not load: ${err.message}`;
+    $('err').classList.remove('hidden');
+  }
+}
+
+// ------------------------------------------------------------- export ----
+
+async function download(format) {
+  const btn = format === 'csv' ? $('export-csv') : $('export-json');
+  const original = btn.innerHTML;
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span>Preparing…';
+  try {
+    // Fetched rather than linked, because the key travels in a header and must
+    // never end up in a URL. The response becomes a Blob and is saved locally.
+    const res = await api('/admin/export', { ...filters(), dataset: state.tab, format });
+    const blob = await res.blob();
+
+    const disposition = res.headers.get('content-disposition') || "";
+    const named = /filename="([^"]+)"/.exec(disposition);
+    const stamp = new Date().toISOString().slice(0,16).replace(/[:T]/g,'').replace(/(\d{8})(\d{4})/,'$1-$2');
+    const filename = named ? named[1] : `presprint-${state.tab}-${stamp}.${format}`;
+
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = filename;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+
+    const rows = res.headers.get('x-row-count');
+    btn.innerHTML = `<span class="btn-label">Saved ${rows ?? ''} rows</span>`;
+    setTimeout(() => { btn.innerHTML = original; }, 2200);
+  } catch (err) {
+    if (err.message !== "unauthorised") {
+      $('err').textContent = `Export failed: ${err.message}`;
+      $('err').classList.remove('hidden');
+    }
+    btn.innerHTML = original;
+  } finally {
+    btn.disabled = false;
+  }
+}
+$('export-csv').addEventListener('click', () => download('csv'));
+$('export-json').addEventListener('click', () => download('json'));
+
+// --------------------------------------------------------------- boot ----
+
+if (adminKey) {
+  try {
+    const res = await fetch(`${API}/admin/session`, { headers: authHeaders() });
+    if (res.ok) { showApp(); await refresh(); }
+    else signOut(res.status === 503 ? (await res.json()).detail : "Please sign in again.");
+  } catch { showGate("Backend unreachable."); }
+} else {
+  showGate();
+}
+</script>
+</body>
+</html>

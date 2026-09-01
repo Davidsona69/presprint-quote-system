@@ -363,6 +363,53 @@ because the backend directory is mounted — commit it like any other file.
 | 3D preview says "unavailable" | no WebGL, or the Three.js CDN is unreachable | it's optional — quoting is unaffected; check the browser console |
 | Pricing endpoints fail after a rate edit | malformed JSON in the matrix | `python -m json.tool backend/pricing_matrix.json` |
 
+## Back office (staff only)
+
+`frontend/admin.html` — quote and order history, with export. Reachable from
+the "Staff" link in the footer of the quote page.
+
+Everything under `/admin/*`, plus listing and modifying orders, requires an
+admin key. **Set one or those endpoints stay closed:**
+
+```bash
+echo "ADMIN_API_KEY=$(openssl rand -hex 32)" >> .env
+docker compose up -d
+```
+
+The key is a shared secret held by Presprint staff, sent as `X-Admin-Key` or
+`Authorization: Bearer`. It is not a user system — if per-person logins and an
+audit trail are needed later, `app/core/security.py` is the seam to replace.
+
+What the page gives you:
+
+- headline tiles — quotes, orders, conversion rate, value of ordered work
+- searchable, filterable history (category, status, date range, free text)
+- **Export CSV or JSON**, honouring whatever filters are on screen
+
+CSV is written with a UTF-8 BOM so Excel on Windows stops mangling accented
+client names, and the JSONB columns (extracted spec, itemised breakdown) come
+through as parseable JSON in their own cells. JSON export keeps them nested.
+The quote export deliberately keeps `raw_query` beside the final price —
+that pairing is the training data for `nlp/train_ner.py`.
+
+Exports are fetched with the key in a header and saved via a Blob, never
+opened as a plain link, so the key cannot leak into browser history or logs.
+
+### A note on the previous guard
+
+An earlier version of `require_staff` began:
+
+```python
+if settings.environment == "development":
+    return
+```
+
+`docker-compose.yml` sets `ENVIRONMENT: development`, so every staff endpoint
+was readable by anyone who could reach the port — client names, phone numbers
+and order totals included. An auth check that a config value can switch off is
+not an auth check. It now fails closed, and `tests/test_admin.py` asserts that
+development mode does not bypass it.
+
 ## Roadmap status
 
 - [x] Repo scaffold, Docker Compose, Postgres schema
@@ -376,6 +423,7 @@ because the backend directory is mounted — commit it like any other file.
 - [x] Shared press-ready book page normalization for pricing and preview
 - [x] Staff key protection for order administration and production-only docs disablement
 - [x] Five-step frontend wizard
+- [x] Staff back office: history, filters, CSV/JSON export, fail-closed auth
 - [ ] Real Presprint pricing data → `pricing_matrix.json`
 - [ ] UAT query logging → training data for `nlp/train_ner.py`
 - [ ] Nginx SSL termination + GitHub Actions deploy job (Week 7)

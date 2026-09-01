@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Presprint — Instant Quote</title>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 140 84'><g transform='rotate(-9 70 42)'><path id='l' fill='none' d='M 70,42 C 70,13 25,13 25,42 C 25,71 70,71 70,42 C 70,13 115,13 115,42 C 115,71 70,71 70,42 Z'/><use href='%23l' stroke='%23F4620F' stroke-width='22' stroke-linejoin='round'/><use href='%23l' stroke='%23FFFFFF' stroke-width='19' stroke-linejoin='round'/><use href='%23l' stroke='%2345C8F6' stroke-width='15' stroke-linejoin='round'/></g></svg>">
 <script src="https://cdn.tailwindcss.com"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -56,32 +57,30 @@
     }
   }
 
-  /* ---------- Registration mark: signature brand + loader element ---------- */
-  .reg-mark { position: relative; width: 28px; height: 28px; flex-shrink: 0; }
-  .reg-mark .dot {
-    position: absolute; width: 13px; height: 13px; border-radius: 50%;
-    mix-blend-mode: multiply;
-    transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
-  }
-  .reg-mark .dot.c { background: var(--cyan); top: 1px; left: 1px; }
-  .reg-mark .dot.m { background: var(--magenta); top: 1px; right: 1px; }
-  .reg-mark .dot.y { background: var(--yellow); bottom: 1px; left: 1px; }
-  .reg-mark .dot.k { background: var(--key); bottom: 1px; right: 1px; }
-  .reg-mark.aligned .dot { transform: translate(0, 0); }
-  .reg-mark:not(.aligned) .dot.c { transform: translate(-2px, -1px); }
-  .reg-mark:not(.aligned) .dot.m { transform: translate(2px, -1px); }
-  .reg-mark:not(.aligned) .dot.y { transform: translate(-2px, 1px); }
-  .reg-mark:not(.aligned) .dot.k { transform: translate(2px, 1px); }
+  /* ---------- Presprint mark ----------
+     The logo as inline SVG: transparent by construction, crisp at any size,
+     and it travels into the print document without a network request.
+     Built as three concentric strokes on one figure-8 path — orange rim,
+     white pool deck, cyan water — mirroring how the logo is drawn. */
+  .brand-mark { display: block; flex-shrink: 0; overflow: visible; }
+  .brand-mark path, .brand-mark use { transition: none; }
 
-  .reg-mark.spin .dot { animation: reg-pulse 1.1s ease-in-out infinite; }
-  .reg-mark.spin .dot.c { animation-delay: 0s;    --rx: -2px; --ry: -1px; }
-  .reg-mark.spin .dot.m { animation-delay: 0.1s;  --rx: 2px;  --ry: -1px; }
-  .reg-mark.spin .dot.y { animation-delay: 0.2s;  --rx: -2px; --ry: 1px; }
-  .reg-mark.spin .dot.k { animation-delay: 0.3s;  --rx: 2px;  --ry: 1px; }
-  @keyframes reg-pulse {
-    0%, 100% { transform: translate(var(--rx, 0), var(--ry, 0)) scale(1); }
-    50% { transform: translate(0, 0) scale(0.85); }
+  /* API offline drains the colour out of the mark, the way the old
+     registration dots used to fall out of alignment. */
+  .brand-mark { transition: filter 0.45s ease, opacity 0.45s ease; }
+  .brand-mark.offline { filter: saturate(0.12); opacity: 0.5; }
+
+  /* Button loader. The mark itself does not spin — an infinity loop rotating
+     reads as broken, not busy — so this is a plain ring in the button's own
+     text colour. */
+  .spinner {
+    width: 15px; height: 15px; flex-shrink: 0;
+    border: 2px solid currentColor;
+    border-top-color: transparent;
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
   }
+  @keyframes spin { to { transform: rotate(360deg); } }
 
   /* ---------- Cards & surfaces ---------- */
   .card {
@@ -270,14 +269,29 @@
 </head>
 <body class="min-h-screen">
 
+  <!-- Presprint logo, defined once and referenced everywhere. -->
+  <svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+    <defs>
+      <symbol id="presprint-mark" viewBox="0 0 140 84">
+        <g transform="rotate(-9 70 42)">
+          <path id="presprint-loop" fill="none"
+                d="M 70,42 C 70,13 25,13 25,42 C 25,71 70,71 70,42 C 70,13 115,13 115,42 C 115,71 70,71 70,42 Z"/>
+          <use href="#presprint-loop" stroke="#F4620F" stroke-width="22" stroke-linejoin="round"/>
+          <use href="#presprint-loop" stroke="#FFFFFF" stroke-width="19" stroke-linejoin="round"/>
+          <use href="#presprint-loop" stroke="#45C8F6" stroke-width="15" stroke-linejoin="round"/>
+        </g>
+      </symbol>
+    </defs>
+  </svg>
+
   <!-- Header -->
   <header class="sticky top-0 z-30 backdrop-blur-md bg-white/75 border-b border-[var(--line)]">
     <div class="max-w-6xl mx-auto px-5 sm:px-8">
       <div class="flex justify-between items-center py-3.5">
         <div class="flex items-center gap-3">
-          <div class="reg-mark aligned" id="brand-mark">
-            <div class="dot c"></div><div class="dot m"></div><div class="dot y"></div><div class="dot k"></div>
-          </div>
+          <svg class="brand-mark" id="brand-mark" width="34" height="34" role="img" aria-label="Presprint">
+            <use href="#presprint-mark"/>
+          </svg>
           <div>
             <h1 class="display font-bold text-lg leading-none tracking-tight">Presprint</h1>
             <p class="text-[10px] uppercase tracking-widest text-[var(--ink-faint)] mt-0.5">Instant Quote Engine</p>
@@ -359,9 +373,9 @@
 
         <div class="lg:col-span-2 flex flex-col gap-4">
           <div class="card p-8 flex items-center justify-center bg-gradient-to-br from-white to-[var(--paper)]">
-            <div class="reg-mark aligned scale-[2.4]" style="width:28px;height:28px;">
-              <div class="dot c"></div><div class="dot m"></div><div class="dot y"></div><div class="dot k"></div>
-            </div>
+            <svg class="brand-mark" width="176" height="112" role="img" aria-label="Presprint">
+              <use href="#presprint-mark"/>
+            </svg>
           </div>
           <div class="card p-4">
             <div class="text-xs font-semibold text-[var(--ink-faint)] uppercase tracking-wide mono">01</div>
@@ -671,10 +685,7 @@ function showExcluded(exclusion) {
 function showLoading(button, text) {
   button.disabled = true;
   button.dataset.label = button.querySelector('.btn-label')?.textContent || "";
-  button.innerHTML = `
-    <span class="reg-mark spin" style="width:16px;height:16px;">
-      <span class="dot c" style="width:7px;height:7px;"></span><span class="dot m" style="width:7px;height:7px;"></span><span class="dot y" style="width:7px;height:7px;"></span><span class="dot k" style="width:7px;height:7px;"></span>
-    </span>${text}…`;
+  button.innerHTML = `<span class="spinner"></span>${text}…`;
 }
 function hideLoading(button, originalText) {
   button.disabled = false;
@@ -1565,8 +1576,7 @@ $('print-receipt-btn').addEventListener('click', () => {
   .header { display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 2px solid #12141C;
     padding-bottom: 12px; margin-bottom: 16px; }
   .brand { font-weight: bold; font-size: 16px; }
-  .marks { display: flex; gap: 3px; margin-top: 4px; }
-  .marks span { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+  .mark { margin-top: 6px; }
   .sub { font-size: 12px; color: #5B6072; }
   .tag { font-size: 10px; letter-spacing: 0.05em; text-transform: uppercase; color: #9298A8; margin-bottom: 2px; }
   .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
@@ -1584,9 +1594,14 @@ $('print-receipt-btn').addEventListener('click', () => {
     <div>
       <div class="brand">Presprint PLC</div>
       <div class="sub">Limbe, Cameroon</div>
-      <div class="marks">
-        <span style="background:#00AEEF"></span><span style="background:#EC008C"></span><span style="background:#FFC700"></span><span style="background:#12141C"></span>
-      </div>
+      <svg class="mark" width="54" height="33" viewBox="0 0 140 84" xmlns="http://www.w3.org/2000/svg">
+        <g transform="rotate(-9 70 42)">
+          <path id="rl" fill="none" d="M 70,42 C 70,13 25,13 25,42 C 25,71 70,71 70,42 C 70,13 115,13 115,42 C 115,71 70,71 70,42 Z"/>
+          <use href="#rl" stroke="#F4620F" stroke-width="22" stroke-linejoin="round"/>
+          <use href="#rl" stroke="#FFFFFF" stroke-width="19" stroke-linejoin="round"/>
+          <use href="#rl" stroke="#45C8F6" stroke-width="15" stroke-linejoin="round"/>
+        </g>
+      </svg>
     </div>
     <div style="text-align:right">
       <div class="tag">Receipt</div>
@@ -1659,10 +1674,10 @@ async function checkHealth() {
     const res = await fetch(`${API_BASE}/health`);
     if (!res.ok) throw new Error();
     $('api-status').innerHTML = `<span class="status-dot status-connected"></span>API connected`;
-    $('brand-mark').classList.add('aligned');
+    $('brand-mark').classList.remove('offline');
   } catch {
     $('api-status').innerHTML = `<span class="status-dot status-offline"></span>API offline`;
-    $('brand-mark').classList.remove('aligned');
+    $('brand-mark').classList.add('offline');
   }
 }
 

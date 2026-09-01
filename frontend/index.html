@@ -558,7 +558,7 @@
   </footer>
 
 <script type="module">
-import { printReceipt } from './receipt.js';
+import { printDocument } from './receipt.js';
 // ===========================================================================
 //  Presprint quote wizard
 //
@@ -1537,7 +1537,7 @@ $('confirm-modal-confirm').addEventListener('click', async () => {
 
 $('print-receipt-btn').addEventListener('click', () => {
   if (!state.receipt) return alert("Place an order first — there's no receipt to print yet.");
-  printReceipt(state.receipt);
+  printDocument(state.receipt);
 });
 
 function resetAll() {

@@ -20,7 +20,7 @@ import json
 from datetime import datetime, timedelta
 from typing import Annotated, Literal
 
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, HTTPException, Query
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 from sqlalchemy import Select, func, or_, select
@@ -227,6 +227,83 @@ async def list_orders(
             quote_id=qt.id, category=qt.category, raw_query=qt.raw_query,
             total_xaf=qt.total_xaf,
         ) for o, qt in rows],
+    )
+
+
+
+class DocumentOrder(BaseModel):
+    order_id: str
+    client_name: str | None
+    client_contact: str | None
+    status: str
+    created_at: datetime
+
+
+class QuoteDocument(BaseModel):
+    """
+    Everything needed to print one quote.
+
+    `kind` is the whole point. A quote nobody has accepted is a *quotation* —
+    an offer. Once an order exists against it, the same figures become a
+    *receipt* for work that was actually bought. Printing an unaccepted quote
+    on a document headed "Receipt" would tell a customer they had paid for
+    something they had not ordered, so the server decides which it is rather
+    than leaving it to the page.
+    """
+    kind: Literal["quotation", "receipt"]
+    quote_id: str
+    created_at: datetime
+    category: str | None
+    raw_query: str | None
+    confidence_score: float | None
+    parameters: dict | None
+    breakdown: list[dict]
+    warnings: list[str] | None
+    subtotal_xaf: float
+    discount_xaf: float
+    rush_fee_xaf: float
+    tax_xaf: float
+    total_xaf: float
+    order: DocumentOrder | None
+
+
+@router.get("/quotes/{quote_id}/document", response_model=QuoteDocument)
+async def quote_document(quote_id: str, db: AsyncSession = Depends(get_db)):
+    """
+    The printable document for any quote, ordered or not.
+
+    Staff regularly need to hand a customer a written quotation before
+    anything is confirmed, which is most quotes — so this is not restricted to
+    those that became orders.
+    """
+    quote = await db.get(Quote, quote_id)
+    if not quote:
+        raise HTTPException(status_code=404, detail="Quote not found")
+
+    order = (await db.execute(
+        select(Order).where(Order.quote_id == quote_id).order_by(Order.created_at.asc())
+    )).scalars().first()
+
+    return QuoteDocument(
+        kind="receipt" if order else "quotation",
+        quote_id=quote.id,
+        created_at=quote.created_at,
+        category=quote.category,
+        raw_query=quote.raw_query,
+        confidence_score=quote.confidence_score,
+        parameters=quote.parameters,
+        breakdown=quote.breakdown or [],
+        warnings=quote.warnings,
+        subtotal_xaf=quote.subtotal_xaf,
+        discount_xaf=quote.discount_xaf,
+        rush_fee_xaf=quote.rush_fee_xaf,
+        tax_xaf=quote.tax_xaf,
+        total_xaf=quote.total_xaf,
+        order=DocumentOrder(
+            order_id=order.id, client_name=order.client_name,
+            client_contact=order.client_contact, status=order.status,
+            created_at=order.created_at,
+        ) if order else None,
     )
 
 

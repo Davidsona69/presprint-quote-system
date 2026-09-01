@@ -160,7 +160,7 @@
 </div>
 
 <script type="module">
-import { printReceipt } from './receipt.js';
+import { printDocument } from './receipt.js';
 // ===========================================================================
 //  Presprint back office
 //
@@ -302,7 +302,7 @@ function renderTiles(s) {
     `<div class="tile"><div class="k">${esc(k)}</div><div class="n">${esc(String(v))}</div></div>`).join("");
 }
 
-const QUOTE_HEAD = ['Date','Category','Request','Confidence','Subtotal','Discount','Tax','Total','Ordered'];
+const QUOTE_HEAD = ['Date','Category','Request','Confidence','Subtotal','Discount','Tax','Total','Ordered','Document'];
 const ORDER_HEAD = ['Date','Status','Client','Contact','Category','Request','Total','Receipt'];
 
 function renderRows(items) {
@@ -328,6 +328,8 @@ function renderRows(items) {
       <td class="num">${fmtXAF(r.tax_xaf)}</td>
       <td class="num font-semibold">${fmtXAF(r.total_xaf)}</td>
       <td>${r.order_count ? '<span class="pill ok">ordered</span>' : '<span class="pill">quote only</span>'}</td>
+      <td><button class="btn btn-ghost py-1.5 px-3 text-xs" data-quote-print="${esc(r.id)}"
+            title="${r.order_count ? 'Print the receipt' : 'Print the quotation'}">Print</button></td>
     </tr>` : `
     <tr>
       <td class="mono text-[.76rem] whitespace-nowrap">${fmtDate(r.created_at)}</td>
@@ -343,7 +345,10 @@ function renderRows(items) {
   // Reprints are fetched one at a time; the row already on screen is a
   // summary, and the receipt needs the full spec and cost breakdown.
   $('tbody').querySelectorAll('[data-print]').forEach(btn =>
-    btn.addEventListener('click', () => printOrderReceipt(btn)));
+    btn.addEventListener('click', () => printFrom(btn, `/orders/${btn.dataset.print}/receipt`)));
+  $('tbody').querySelectorAll('[data-quote-print]').forEach(btn =>
+    btn.addEventListener('click', () =>
+      printFrom(btn, `/admin/quotes/${btn.dataset.quotePrint}/document`)));
 }
 
 async function refresh() {
@@ -373,20 +378,20 @@ async function refresh() {
 
 // ------------------------------------------------------------ receipts ----
 
-async function printOrderReceipt(btn) {
-  const id = btn.dataset.print;
+async function printFrom(btn, path) {
   const original = btn.textContent;
   btn.disabled = true;
   btn.textContent = "…";
   try {
-    // The list view carries only a summary; /orders/{id}/receipt returns the
-    // itemised breakdown and the extracted spec the document needs.
-    const receipt = await (await api(`/orders/${id}/receipt`)).json();
-    // Stamped as a duplicate: staff reprints must not read as a fresh original.
-    printReceipt(receipt, { duplicate: true });
+    // The table row is a summary; the document needs the itemised breakdown
+    // and the extracted spec, so it is fetched per print.
+    const doc = await (await api(path)).json();
+    // Stamped as a duplicate: a staff reprint must not read as a fresh
+    // original. The server decides receipt vs quotation, not this page.
+    printDocument(doc, { duplicate: true });
   } catch (err) {
     if (err.message !== "unauthorised") {
-      $('err').textContent = `Could not open that receipt: ${err.message}`;
+      $('err').textContent = `Could not open that document: ${err.message}`;
       $('err').classList.remove('hidden');
     }
   } finally {

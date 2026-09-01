@@ -384,7 +384,13 @@ What the page gives you:
 
 - headline tiles — quotes, orders, conversion rate, value of ordered work
 - searchable, filterable history (category, status, date range, free text)
+- **Reprint any order's receipt**, from the Receipt column on the Orders tab
 - **Export CSV or JSON**, honouring whatever filters are on screen
+
+Reprints are stamped `DUPLICATE · reprinted <date>` — a print shop should never
+have to guess whether a second copy means a second payment. The document itself
+is built by `frontend/receipt.js`, shared with the customer flow so there is one
+definition of a Presprint receipt rather than two that drift.
 
 CSV is written with a UTF-8 BOM so Excel on Windows stops mangling accented
 client names, and the JSONB columns (extracted spec, itemised breakdown) come

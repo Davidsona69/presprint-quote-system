@@ -1,75 +1,222 @@
 {
   "_comment": "All rates in XAF. One matrix per production line + a shared 'common' tail (volume discount, rush, tax). Replace the placeholder numbers with real Presprint PLC rates from the Week 1 interviews — no code changes needed.",
-
   "common": {
     "volume_discount_tiers": [
-      { "min_quantity": 1,    "max_quantity": 99,   "discount_percent": 0  },
-      { "min_quantity": 100,  "max_quantity": 499,  "discount_percent": 5  },
-      { "min_quantity": 500,  "max_quantity": 999,  "discount_percent": 10 },
-      { "min_quantity": 1000, "max_quantity": null, "discount_percent": 15 }
+      {
+        "min_quantity": 1,
+        "max_quantity": 99,
+        "discount_percent": 0
+      },
+      {
+        "min_quantity": 100,
+        "max_quantity": 499,
+        "discount_percent": 5
+      },
+      {
+        "min_quantity": 500,
+        "max_quantity": 999,
+        "discount_percent": 10
+      },
+      {
+        "min_quantity": 1000,
+        "max_quantity": null,
+        "discount_percent": 15
+      }
     ],
     "rush_fee_percent": 20,
     "tax_percent": 19.25
   },
-
   "exclusions": {
-    "terms": ["pen", "pens", "biro", "ballpoint", "pencil", "pencils", "marker", "markers",
-              "id card", "id cards", "identity card", "identity cards", "badge card"],
+    "terms": [
+      "pen",
+      "pens",
+      "biro",
+      "ballpoint",
+      "pencil",
+      "pencils",
+      "marker",
+      "markers",
+      "id card",
+      "id cards",
+      "identity card",
+      "identity cards",
+      "badge card"
+    ],
     "reason": "Writing instruments and ID cards are sourced and priced manually by Presprint staff — they are outside the automated quoting workflow."
   },
-
   "benchmark": {
     "_comment": "Flat-sheet work: flyers, posters, business cards, booklets, banners.",
     "paper_rates": {
-      "A2": { "matte": 320, "glossy": 420, "uncoated": 260 },
-      "A3": { "matte": 150, "glossy": 200, "uncoated": 120 },
-      "A4": { "matte": 60,  "glossy": 90,  "uncoated": 50  },
-      "A5": { "matte": 35,  "glossy": 50,  "uncoated": 30  },
-      "A6": { "matte": 22,  "glossy": 32,  "uncoated": 18  }
+      "A2": {
+        "matte": 320,
+        "glossy": 420,
+        "uncoated": 260
+      },
+      "A3": {
+        "matte": 150,
+        "glossy": 200,
+        "uncoated": 120
+      },
+      "A4": {
+        "matte": 60,
+        "glossy": 90,
+        "uncoated": 50
+      },
+      "A5": {
+        "matte": 35,
+        "glossy": 50,
+        "uncoated": 30
+      },
+      "A6": {
+        "matte": 22,
+        "glossy": 32,
+        "uncoated": 18
+      }
     },
-    "gsm_multipliers": { "80": 1.0, "100": 1.15, "130": 1.35, "170": 1.6, "250": 2.1, "300": 2.5 },
-    "ink_rates": { "full_color": 40, "black_white": 10 },
+    "gsm_multipliers": {
+      "80": 1.0,
+      "100": 1.15,
+      "130": 1.35,
+      "170": 1.6,
+      "250": 2.1,
+      "300": 2.5
+    },
+    "ink_rates": {
+      "full_color": 40,
+      "black_white": 10
+    },
     "double_sided_multiplier": 1.8,
     "finishing_rates": {
-      "lamination":     { "flat": 500,  "per_unit": 25 },
-      "spiral binding": { "flat": 1000, "per_unit": 0  },
-      "stapling":       { "flat": 0,    "per_unit": 5  },
-      "folding":        { "flat": 0,    "per_unit": 10 },
-      "die-cut":        { "flat": 1500, "per_unit": 15 },
-      "perforation":    { "flat": 500,  "per_unit": 5  },
-      "embossing":      { "flat": 2000, "per_unit": 30 }
+      "lamination": {
+        "flat": 500,
+        "per_unit": 25
+      },
+      "spiral binding": {
+        "flat": 1000,
+        "per_unit": 0
+      },
+      "stapling": {
+        "flat": 0,
+        "per_unit": 5
+      },
+      "folding": {
+        "flat": 0,
+        "per_unit": 10
+      },
+      "die-cut": {
+        "flat": 1500,
+        "per_unit": 15
+      },
+      "perforation": {
+        "flat": 500,
+        "per_unit": 5
+      },
+      "embossing": {
+        "flat": 2000,
+        "per_unit": 30
+      }
     }
   },
-
   "book": {
     "_comment": "Bound work. Interior is costed per press sheet; 'up' is how many book leaves fit on one A4-equivalent sheet.",
     "trim_sizes": {
-      "A4": { "width_mm": 210, "height_mm": 297, "up": 1 },
-      "B5": { "width_mm": 176, "height_mm": 250, "up": 1 },
-      "A5": { "width_mm": 148, "height_mm": 210, "up": 2 },
-      "A6": { "width_mm": 105, "height_mm": 148, "up": 4 }
+      "A4": {
+        "width_mm": 210,
+        "height_mm": 297,
+        "up": 1
+      },
+      "B5": {
+        "width_mm": 176,
+        "height_mm": 250,
+        "up": 1
+      },
+      "A5": {
+        "width_mm": 148,
+        "height_mm": 210,
+        "up": 2
+      },
+      "A6": {
+        "width_mm": 105,
+        "height_mm": 148,
+        "up": 4
+      }
     },
-    "interior_paper_rates_per_sheet": { "60": 18, "70": 22, "80": 26, "100": 34, "120": 42 },
-    "cover_paper_rates_per_sheet":    { "170": 95, "200": 120, "250": 150, "300": 190 },
-    "interior_ink_rates_per_page":    { "full_color": 22, "black_white": 4 },
-    "cover_ink_rates_per_copy":       { "full_color": 120, "black_white": 40 },
+    "interior_paper_rates_per_sheet": {
+      "60": 18,
+      "70": 22,
+      "80": 26,
+      "100": 34,
+      "120": 42
+    },
+    "cover_paper_rates_per_sheet": {
+      "170": 95,
+      "200": 120,
+      "250": 150,
+      "300": 190
+    },
+    "interior_ink_rates_per_page": {
+      "full_color": 22,
+      "black_white": 4
+    },
+    "cover_ink_rates_per_copy": {
+      "full_color": 120,
+      "black_white": 40
+    },
     "binding_rates": {
-      "saddle_stitch": { "flat": 2000,  "per_unit": 60,  "max_pages": 64 },
-      "spiral":        { "flat": 1000,  "per_unit": 250, "max_pages": 400 },
-      "perfect":       { "flat": 15000, "per_unit": 180, "min_pages": 48, "max_pages": 800 },
-      "case":          { "flat": 25000, "per_unit": 900, "min_pages": 64 }
+      "saddle_stitch": {
+        "flat": 2000,
+        "per_unit": 60,
+        "max_pages": 64
+      },
+      "spiral": {
+        "flat": 1000,
+        "per_unit": 250,
+        "max_pages": 400
+      },
+      "perfect": {
+        "flat": 15000,
+        "per_unit": 180,
+        "min_pages": 48,
+        "max_pages": 800
+      },
+      "case": {
+        "flat": 25000,
+        "per_unit": 900,
+        "min_pages": 64
+      }
     },
     "cover_finish_rates": {
-      "matte":    { "flat": 0,    "per_unit": 20 },
-      "glossy":   { "flat": 0,    "per_unit": 30 },
-      "uncoated": { "flat": 0,    "per_unit": 0  }
+      "matte": {
+        "flat": 0,
+        "per_unit": 20
+      },
+      "glossy": {
+        "flat": 0,
+        "per_unit": 30
+      },
+      "uncoated": {
+        "flat": 0,
+        "per_unit": 0
+      }
     },
     "caliper_mm_per_gsm": 0.00125,
     "finishing_rates": {
-      "lamination":  { "flat": 500,  "per_unit": 25 },
-      "foiling":     { "flat": 4000, "per_unit": 80 },
-      "embossing":   { "flat": 2000, "per_unit": 30 },
-      "die-cut":     { "flat": 1500, "per_unit": 15 }
+      "lamination": {
+        "flat": 500,
+        "per_unit": 25
+      },
+      "foiling": {
+        "flat": 4000,
+        "per_unit": 80
+      },
+      "embossing": {
+        "flat": 2000,
+        "per_unit": 30
+      },
+      "die-cut": {
+        "flat": 1500,
+        "per_unit": 15
+      }
     },
     "defaults": {
       "trim_size": "A5",
@@ -79,25 +226,130 @@
       "cover_finish": "glossy",
       "color_mode": "black_white",
       "page_count": 64
+    },
+    "interior_options": {
+      "_comment": "Typesetting. Typefaces list the CSS stack the 3D preview draws with; paper tones carry a stock multiplier because cream and kraft cost more than bright white. Add a face here and it appears in the form, the preview and the quote with no code change.",
+      "typefaces": {
+        "eb_garamond": {
+          "label": "EB Garamond",
+          "css": "'EB Garamond', Georgia, serif",
+          "kind": "serif",
+          "note": "Classic book face. Small on the page, set a size up."
+        },
+        "lora": {
+          "label": "Lora",
+          "css": "'Lora', Georgia, serif",
+          "kind": "serif",
+          "note": "Contemporary serif, comfortable at 11pt."
+        },
+        "merriweather": {
+          "label": "Merriweather",
+          "css": "'Merriweather', Georgia, serif",
+          "kind": "serif",
+          "note": "Large x-height. Good for textbooks and long reading."
+        },
+        "open_sans": {
+          "label": "Open Sans",
+          "css": "'Open Sans', Helvetica, sans-serif",
+          "kind": "sans",
+          "note": "Sans serif. Manuals, workbooks, exercise books."
+        },
+        "caveat": {
+          "label": "Caveat (handwriting)",
+          "css": "'Caveat', cursive",
+          "kind": "handwriting",
+          "note": "Handwriting style. Set it larger — it reads small."
+        }
+      },
+      "paper_tones": {
+        "bright_white": {
+          "label": "Bright white",
+          "hex": "#FDFDFD",
+          "rate_multiplier": 1.0
+        },
+        "white": {
+          "label": "White",
+          "hex": "#F7F6F3",
+          "rate_multiplier": 1.0
+        },
+        "cream": {
+          "label": "Cream",
+          "hex": "#F3EAD6",
+          "rate_multiplier": 1.08
+        },
+        "natural": {
+          "label": "Natural",
+          "hex": "#EADFC8",
+          "rate_multiplier": 1.08
+        },
+        "kraft_brown": {
+          "label": "Kraft brown",
+          "hex": "#D6BE9C",
+          "rate_multiplier": 1.15
+        }
+      },
+      "text_aligns": [
+        "left",
+        "justified",
+        "center"
+      ],
+      "typesetting_rate_per_page_xaf": 120,
+      "typesetting_minimum_xaf": 5000,
+      "_typesetting_note": "Charged only when the customer specifies typesetting. Left to house style, no layout work is billed.",
+      "defaults": {
+        "typeface": "lora",
+        "font_size_pt": 11.0,
+        "line_spacing": 1.45,
+        "letter_spacing_em": 0.0,
+        "text_align": "justified",
+        "margin_mm": 18.0,
+        "paper_tone": "white"
+      },
+      "_default_tone_note": "House tone is a 1.0-multiplier stock on purpose. A default that carried a premium would quietly raise every book quote that never asked for it."
     }
   },
-
   "merch": {
     "_comment": "Decorated goods. Cost = blank garment/product + decoration, per placement, per colour.",
     "blank_rates": {
-      "shirt":    3500,
-      "cap":      3000,
-      "bag":      2800,
-      "mug":      2500,
+      "shirt": 3500,
+      "cap": 3000,
+      "bag": 2800,
+      "mug": 2500,
       "umbrella": 6500,
-      "lanyard":  900
+      "lanyard": 900
     },
-    "size_multipliers": { "S": 1.0, "M": 1.0, "L": 1.05, "XL": 1.12, "XXL": 1.2 },
+    "size_multipliers": {
+      "S": 1.0,
+      "M": 1.0,
+      "L": 1.05,
+      "XL": 1.12,
+      "XXL": 1.2
+    },
     "print_methods": {
-      "screen":      { "setup_per_color_per_placement": 3500, "per_unit_per_color_per_placement": 120, "per_unit_per_placement": 0,   "max_colors": 6 },
-      "dtf":         { "setup_per_color_per_placement": 0,    "per_unit_per_color_per_placement": 0,   "per_unit_per_placement": 700, "max_colors": 99 },
-      "sublimation": { "setup_per_color_per_placement": 0,    "per_unit_per_color_per_placement": 0,   "per_unit_per_placement": 550, "max_colors": 99 },
-      "embroidery":  { "setup_per_color_per_placement": 8000, "per_unit_per_color_per_placement": 0,   "per_unit_per_placement": 950, "max_colors": 12 }
+      "screen": {
+        "setup_per_color_per_placement": 3500,
+        "per_unit_per_color_per_placement": 120,
+        "per_unit_per_placement": 0,
+        "max_colors": 6
+      },
+      "dtf": {
+        "setup_per_color_per_placement": 0,
+        "per_unit_per_color_per_placement": 0,
+        "per_unit_per_placement": 700,
+        "max_colors": 99
+      },
+      "sublimation": {
+        "setup_per_color_per_placement": 0,
+        "per_unit_per_color_per_placement": 0,
+        "per_unit_per_placement": 550,
+        "max_colors": 99
+      },
+      "embroidery": {
+        "setup_per_color_per_placement": 8000,
+        "per_unit_per_color_per_placement": 0,
+        "per_unit_per_placement": 950,
+        "max_colors": 12
+      }
     },
     "default_method_by_item": {
       "shirt": "screen",
@@ -108,12 +360,31 @@
       "lanyard": "sublimation"
     },
     "valid_placements_by_item": {
-      "shirt":    ["front", "back", "sleeve"],
-      "cap":      ["front", "back", "side"],
-      "bag":      ["front", "back"],
-      "mug":      ["wrap", "front"],
-      "umbrella": ["panel", "wrap"],
-      "lanyard":  ["wrap"]
+      "shirt": [
+        "front",
+        "back",
+        "sleeve"
+      ],
+      "cap": [
+        "front",
+        "back",
+        "side"
+      ],
+      "bag": [
+        "front",
+        "back"
+      ],
+      "mug": [
+        "wrap",
+        "front"
+      ],
+      "umbrella": [
+        "panel",
+        "wrap"
+      ],
+      "lanyard": [
+        "wrap"
+      ]
     },
     "defaults": {
       "garment_size": "L",

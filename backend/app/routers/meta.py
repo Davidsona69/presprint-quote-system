@@ -49,6 +49,21 @@ async def list_categories():
                 "color_mode": ["full_color", "black_white"],
                 "finishing": sorted(book["finishing_rates"].keys()),
             },
+            # Advanced/typesetting parameters. Kept apart from `options` so the
+            # form can hide them behind a toggle — most customers never open it.
+            "interior_options": {
+                "typefaces": [
+                    {"value": k, **v} for k, v in book["interior_options"]["typefaces"].items()
+                ],
+                "paper_tones": [
+                    {"value": k, **v} for k, v in book["interior_options"]["paper_tones"].items()
+                ],
+                "text_aligns": book["interior_options"]["text_aligns"],
+                "defaults": book["interior_options"]["defaults"],
+                "typesetting_rate_per_page_xaf":
+                    book["interior_options"]["typesetting_rate_per_page_xaf"],
+                "typesetting_minimum_xaf": book["interior_options"]["typesetting_minimum_xaf"],
+            },
         },
         "merch": {
             "label": "Merch",

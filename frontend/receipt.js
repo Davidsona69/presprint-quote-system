@@ -28,12 +28,40 @@ function esc(str) {
   return d.innerHTML;
 }
 
+function row(label, value) {
+  return `<div class="row"><span>${esc(label)}</span><span>${esc(value)}</span></div>`;
+}
+
+/**
+ * Book typesetting reads as a sentence, not as seven separate rows of numbers.
+ * A customer checking a receipt wants "Caveat 15pt / 1.7, justified", not a
+ * field-by-field dump — and nothing at all if they left it to house style.
+ */
+function interiorRows(interior) {
+  if (!interior) return "";
+  const set = Object.entries(interior).filter(([, v]) => v !== null && v !== "");
+  if (!set.length) return "";
+
+  const bits = [];
+  if (interior.typeface) bits.push(prettify(interior.typeface));
+  if (interior.font_size_pt) bits.push(`${interior.font_size_pt}pt`);
+  if (interior.line_spacing) bits.push(`/ ${interior.line_spacing} leading`);
+  if (interior.text_align) bits.push(interior.text_align);
+
+  let out = bits.length ? row("Typesetting", bits.join(" ")) : "";
+  if (interior.paper_tone) out += row("Page colour", prettify(interior.paper_tone));
+  if (interior.margin_mm) out += row("Margins", `${interior.margin_mm} mm`);
+  if (interior.letter_spacing_em) out += row("Letter spacing", `${interior.letter_spacing_em} em`);
+  return out;
+}
+
 function specRows(params) {
-  const skip = new Set(["category", "urgency"]);
-  return Object.entries(params || {})
+  const skip = new Set(["category", "urgency", "interior"]);
+  const flat = Object.entries(params || {})
     .filter(([k, v]) => !skip.has(k) && v !== null && v !== "" && !(Array.isArray(v) && !v.length))
-    .map(([k, v]) => `<div class="row"><span>${esc(prettify(k))}</span><span>${esc(Array.isArray(v) ? v.map(prettify).join(", ") : prettify(v))}</span></div>`)
+    .map(([k, v]) => row(prettify(k), Array.isArray(v) ? v.map(prettify).join(", ") : prettify(v)))
     .join("");
+  return flat + interiorRows(params?.interior);
 }
 
 /**

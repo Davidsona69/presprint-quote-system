@@ -363,6 +363,39 @@ because the backend directory is mounted — commit it like any other file.
 | 3D preview says "unavailable" | no WebGL, or the Three.js CDN is unreachable | it's optional — quoting is unaffected; check the browser console |
 | Pricing endpoints fail after a rate edit | malformed JSON in the matrix | `python -m json.tool backend/pricing_matrix.json` |
 
+## Book interiors (advanced settings)
+
+"200 pages, A5, perfect bound" describes a brick. It says nothing about whether
+the text is 9pt Garamond set tight or 13pt with generous leading — which is the
+difference between a readable novel and an unreadable one, and which is real
+layout work somebody has to be paid for.
+
+The book review step has an **Advanced settings** panel covering typeface, size,
+line spacing, letter spacing, alignment, margins and page colour. It stays shut
+by default; most customers leave the interior to the shop.
+
+The 3D viewport gains a **Cover / Interior** switch. Interior opens the book and
+draws the actual page — the chosen face at the chosen size, line-broken and
+justified for real onto the chosen paper tone. It is a canvas texture, so the
+measure you see is the measure the backend calculated, not an illustration.
+
+Two things carry a cost, both from the matrix:
+
+- **paper tone** — cream, natural and kraft are dearer stock than white
+- **typesetting** — charged per page, once, *only if the customer specified
+  something*. Falling back to house style is not layout work and is not billed.
+  The house default tone is deliberately a 1.0 multiplier, so an unspecified
+  book quote is priced exactly as it was before this feature existed.
+
+The engine also warns rather than silently pricing something unreadable: a
+handwriting face below 12pt, or line spacing under 1.2. And the preview reports
+the measure — typographers call 45–75 characters a line comfortable, so it says
+so when you stray far outside it.
+
+Add a typeface or a paper tone to `pricing_matrix.json` under
+`book.interior_options` and it appears in the form, the 3D page and the quote
+with no code change.
+
 ## Back office (staff only)
 
 `frontend/admin.html` — quote and order history, with export. Reachable from

@@ -9,6 +9,8 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<!-- Body faces offered for book interiors; the 3D page is drawn in these. -->
+<link href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,600;1,400&family=Lora:ital,wght@0,400;0,600;1,400&family=Merriweather:ital,wght@0,400;0,700;1,400&family=Open+Sans:ital,wght@0,400;0,600;1,400&family=Caveat:wght@400;600&display=swap" rel="stylesheet">
 <script type="importmap">
 {
   "imports": {
@@ -239,7 +241,48 @@
   .confidence-track { height: 6px; background: var(--line); border-radius: 999px; overflow: hidden; }
   .confidence-fill-bar { height: 100%; border-radius: 999px; transition: width 0.5s cubic-bezier(0.16,1,0.3,1), background 0.3s ease; }
 
+  /* ---------- Advanced (typesetting) panel ---------- */
+  .adv-toggle {
+    display: flex; align-items: center; justify-content: space-between; width: 100%;
+    padding: 11px 14px; border: 1.5px solid var(--line); border-radius: 12px;
+    background: var(--surface); font-size: 0.84rem; font-weight: 600; cursor: pointer;
+    transition: border-color .15s ease, background .15s ease;
+  }
+  .adv-toggle:hover { border-color: var(--line-strong); background: var(--paper); }
+  .adv-toggle .hint { font-weight: 400; font-size: 0.72rem; color: var(--ink-faint); }
+  .adv-panel { display: grid; grid-template-rows: 0fr; transition: grid-template-rows .3s cubic-bezier(.16,1,.3,1); }
+  .adv-panel.open { grid-template-rows: 1fr; }
+  .adv-panel > div { overflow: hidden; }
+  .adv-body { padding-top: 14px; }
+
+  .slider-row { display: flex; align-items: center; gap: 10px; }
+  .slider-row input[type=range] { flex: 1; accent-color: var(--cyan); }
+  .slider-row .val {
+    font-family: 'IBM Plex Mono', monospace; font-size: .74rem; color: var(--ink-soft);
+    min-width: 48px; text-align: right;
+  }
+  .face-btn {
+    text-align: left; padding: 8px 11px; border: 1.5px solid var(--line);
+    border-radius: 10px; background: var(--surface); cursor: pointer; width: 100%;
+    transition: border-color .15s ease, box-shadow .15s ease;
+  }
+  .face-btn:hover { border-color: var(--line-strong); }
+  .face-btn.sel { border-color: var(--cyan); box-shadow: 0 0 0 3px rgba(0,174,239,.14); }
+  .face-btn .name { font-size: .7rem; color: var(--ink-faint); display: block; margin-bottom: 1px; }
+  .face-btn .samp { font-size: 1rem; line-height: 1.15; color: var(--ink); }
+  .tone-sw {
+    width: 100%; aspect-ratio: 1.6; border-radius: 8px; border: 1.5px solid var(--line);
+    cursor: pointer; transition: box-shadow .15s ease, border-color .15s ease;
+  }
+  .tone-sw.sel { border-color: var(--cyan); box-shadow: 0 0 0 3px rgba(0,174,239,.14); }
+
   /* ---------- 3D viewport ---------- */
+  .tab-mini {
+    padding: 3px 10px; border-radius: 999px; font-size: .7rem; font-weight: 600;
+    color: var(--ink-faint); background: transparent; transition: all .15s ease;
+  }
+  .tab-mini.active { background: var(--surface); color: var(--ink); box-shadow: 0 1px 2px rgba(18,20,28,.1); }
+
   .viewport {
     position: relative; width: 100%; min-height: 320px; height: 100%;
     border-radius: 14px; overflow: hidden;
@@ -420,6 +463,20 @@
 
           <div class="grid grid-cols-2 sm:grid-cols-3 gap-4" id="spec-grid"></div>
 
+          <!-- Book only: the typesetting your supervisor was asking about.
+               Hidden by default because most customers leave it to the shop. -->
+          <div id="advanced-wrap" class="mt-6 hidden">
+            <button type="button" class="adv-toggle" id="adv-toggle" aria-expanded="false">
+              <span>Advanced settings
+                <span class="hint">— typeface, size, spacing, page colour</span>
+              </span>
+              <svg class="accordion-chevron w-4 h-4 text-[var(--ink-faint)]" viewBox="0 0 12 8" fill="none">
+                <path d="M1 1l5 5 5-5" stroke="currentColor" stroke-width="1.5"
+                      stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </button>
+            <div class="adv-panel" id="adv-panel"><div><div class="adv-body" id="adv-body"></div></div></div>
+          </div>
+
           <div class="flex flex-col sm:flex-row gap-3 mt-7">
             <button id="back-to-describe-btn" class="btn btn-ghost sm:w-auto" type="button">← Edit request</button>
             <button id="quote-btn" class="btn btn-accent flex-1">
@@ -432,7 +489,13 @@
         <div class="lg:col-span-2 card p-4 flex flex-col gap-3">
           <div class="flex items-center justify-between px-1.5 pt-1">
             <h4 class="display font-semibold text-sm">Live preview</h4>
-            <button id="reset-view-btn" class="text-xs text-[var(--ink-faint)] hover:text-[var(--ink)]">reset view</button>
+            <div class="flex items-center gap-2">
+              <div id="view-modes" class="hidden items-center gap-1 bg-[var(--paper)] rounded-full p-0.5 border border-[var(--line)]">
+                <button class="tab-mini active" data-view="cover">Cover</button>
+                <button class="tab-mini" data-view="interior">Interior</button>
+              </div>
+              <button id="reset-view-btn" class="text-xs text-[var(--ink-faint)] hover:text-[var(--ink)]">reset</button>
+            </div>
           </div>
           <div class="viewport flex-1" id="viewport">
             <span class="viewport-badge" id="viewport-badge">—</span>
@@ -622,6 +685,7 @@ const state = {
   rawQuery: "",
   quote: null,
   receipt: null,
+  preview: null,
 };
 
 // ------------------------------------------------------------ step nav ----
@@ -986,8 +1050,141 @@ function buildLanyard(cfg) {
   return g;
 }
 
+
+/**
+ * Draw a book page to a canvas at the requested typesetting, for use as a
+ * texture. Canvas is the right tool here: it gives real font rendering, real
+ * line breaking and real justification, so what appears on the 3D page is the
+ * actual measure the backend calculated rather than a picture of some text.
+ */
+function pageTexture(interior, { pageNumber = 1 } = {}) {
+  const PX_PER_MM = 4;                       // ~100dpi, plenty at viewport size
+  const w = Math.round(interior.page_width_mm * PX_PER_MM);
+  const h = Math.round(interior.page_height_mm * PX_PER_MM);
+  const c = document.createElement('canvas');
+  c.width = w; c.height = h;
+  const g = c.getContext('2d');
+
+  g.fillStyle = interior.paper_tone_hex || "#F7F6F3";
+  g.fillRect(0, 0, w, h);
+
+  const margin = interior.margin_mm * PX_PER_MM;
+  const sizePx = interior.font_size_pt * 0.352778 * PX_PER_MM;
+  const lineH = sizePx * interior.line_spacing;
+  const textW = w - margin * 2;
+
+  g.fillStyle = "#1F1B16";                   // ink, not pure black
+  g.textBaseline = "alphabetic";
+  g.font = `${sizePx}px ${interior.typeface_css}`;
+  if ('letterSpacing' in g) g.letterSpacing = `${interior.letter_spacing_em}em`;
+
+  const words = SAMPLE_TEXT.split(/\s+/);
+  let line = [], y = margin + sizePx, wi = 0;
+
+  const draw = (parts, justify) => {
+    const text = parts.join(" ");
+    if (justify && parts.length > 1) {
+      // Spread the slack across the gaps, which is what justification is.
+      const natural = g.measureText(text).width;
+      const slack = textW - natural;
+      const gap = slack / (parts.length - 1);
+      let x = margin;
+      parts.forEach((word, i) => {
+        g.fillText(word, x, y);
+        x += g.measureText(word).width + g.measureText(" ").width + (i < parts.length - 1 ? gap : 0);
+      });
+    } else {
+      const tw = g.measureText(text).width;
+      const x = interior.text_align === "center" ? margin + (textW - tw) / 2 : margin;
+      g.fillText(text, x, y);
+    }
+  };
+
+  while (y < h - margin && wi < 4000) {
+    const word = words[wi % words.length];
+    const trial = [...line, word];
+    if (g.measureText(trial.join(" ")).width > textW && line.length) {
+      draw(line, interior.text_align === "justified");
+      line = [word]; y += lineH;
+    } else {
+      line = trial;
+    }
+    wi++;
+  }
+  if (line.length && y < h - margin) draw(line, false);   // last line never justifies
+
+  // Folio, so the page reads as a page.
+  g.font = `${sizePx * 0.8}px ${interior.typeface_css}`;
+  if ('letterSpacing' in g) g.letterSpacing = "0em";
+  g.fillStyle = "#6B6459";
+  const folio = String(pageNumber);
+  g.fillText(folio, margin + (textW - g.measureText(folio).width) / 2, h - margin * 0.45);
+
+  const tex = new THREE.CanvasTexture(c);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  tex.anisotropy = 8;
+  return tex;
+}
+
+const SAMPLE_TEXT = `The compositor set the page before the press ever turned, and every
+choice she made there decided how the book would be read. A measure too wide and the eye
+loses its place on the return; too narrow and the words crowd against the margin, breaking
+badly. Leading opens the page and lets the lines breathe. The type itself carries a voice
+of its own, quiet on the page yet present in every paragraph, and the reader who never
+notices it is the reader for whom it was set well. Paper takes the ink and gives it back
+softened, warmer on a natural sheet than on a bright white one, and the difference is felt
+long before it is seen.`;
+
+function buildBookInterior(cfg) {
+  const g = new THREE.Group();
+  const i = cfg.interior;
+  const d = cfg.dimensions_mm;
+  const w = d.width * MM, h = d.height * MM;
+  const spine = Math.max(d.spine, 3) * MM;
+  const board = 1.2 * MM;
+  const tilt = 0.16;                       // pages lift slightly from the gutter
+
+  const paper = new THREE.MeshStandardMaterial({
+    color: 0xffffff, roughness: 0.94, metalness: 0,
+  });
+
+  // Two leaves, hinged at the gutter.
+  for (const side of [-1, 1]) {
+    const mat = paper.clone();
+    mat.map = pageTexture(i, { pageNumber: side < 0 ? Math.max(i.page_count - 1, 1) : i.page_count });
+    const face = new THREE.Mesh(new THREE.PlaneGeometry(w, h), mat);
+    face.position.set(side * w / 2 * Math.cos(tilt), 0, Math.sin(tilt) * w / 2 * -side * 0 + 0.004);
+    face.rotation.y = -side * tilt;
+    face.position.x = side * (w / 2) * Math.cos(tilt);
+    face.position.z = (w / 2) * Math.sin(tilt) - (w / 2) * Math.sin(tilt);
+    g.add(face);
+
+    // The block of leaves underneath, so it reads as a book not two sheets.
+    const blockMat = new THREE.MeshStandardMaterial({ color: 0xEDE7DA, roughness: 0.95 });
+    const block = new THREE.Mesh(new THREE.BoxGeometry(w, h, spine / 2), blockMat);
+    block.position.copy(face.position);
+    block.rotation.copy(face.rotation);
+    block.translateZ(-spine / 4 - 0.002);
+    g.add(block);
+  }
+
+  // Cover boards under each half.
+  const coverMat = new THREE.MeshStandardMaterial({
+    color: new THREE.Color(cfg.color || "#2C3244"),
+    roughness: FINISH_ROUGHNESS[cfg.finish] ?? 0.7,
+  });
+  for (const side of [-1, 1]) {
+    const cover = new THREE.Mesh(new THREE.BoxGeometry(w + 2 * MM, h + 2 * MM, board), coverMat);
+    cover.rotation.y = -side * tilt;
+    cover.position.x = side * (w / 2) * Math.cos(tilt);
+    cover.translateZ(-spine / 2 - board);
+    g.add(cover);
+  }
+  return g;
+}
+
 const BUILDERS = {
-  sheet: buildSheet, book: buildBook, mug: buildMug, tshirt: buildTshirt,
+  sheet: buildSheet, book: buildBook, book_interior: buildBookInterior, mug: buildMug, tshirt: buildTshirt,
   cap: buildCap, bag: buildBag, umbrella: buildUmbrella, lanyard: buildLanyard,
 };
 
@@ -1048,14 +1245,23 @@ const viewer = (() => {
     renderer.setSize(w, h, false);
     camera.aspect = w / h;
     camera.updateProjectionMatrix();
+    if (current) frame(current, mode === "interior" ? new THREE.Vector3(0, 0.55, 1) : null);
   }
 
-  function frame(object) {
+  function frame(object, viewDir) {
     const box = new THREE.Box3().setFromObject(object);
     const sphere = box.getBoundingSphere(new THREE.Sphere());
-    const dist = sphere.radius / Math.sin((camera.fov * Math.PI / 180) / 2) * 1.25;
+
+    // `camera.fov` is the VERTICAL field of view. In a tall, narrow viewport the
+    // horizontal field is much smaller, so framing on the vertical alone crops
+    // anything wide — an open book spread most of all. Fit to whichever is tighter.
+    const vFov = camera.fov * Math.PI / 180;
+    const hFov = 2 * Math.atan(Math.tan(vFov / 2) * camera.aspect);
+    const dist = sphere.radius / Math.sin(Math.min(vFov, hFov) / 2) * 1.15;
+
     controls.target.copy(sphere.center);
-    camera.position.copy(sphere.center).add(new THREE.Vector3(0.55, 0.42, 1).normalize().multiplyScalar(dist));
+    const dir = viewDir || new THREE.Vector3(0.55, 0.42, 1);
+    camera.position.copy(sphere.center).add(dir.clone().normalize().multiplyScalar(dist));
     camera.near = Math.max(dist / 100, 0.01);
     camera.far = dist * 10;
     camera.updateProjectionMatrix();
@@ -1070,7 +1276,11 @@ const viewer = (() => {
     });
   }
 
-  function render(cfg) {
+  let lastCfg = null, mode = 'cover';
+
+  function render(cfg, nextMode) {
+    lastCfg = cfg;
+    if (nextMode) mode = nextMode;
     $('viewport-badge').textContent = cfg.kind;
     const dims = Object.entries(cfg.dimensions_mm)
       .map(([k, v]) => `${k} ${v} mm`).join("  ·  ");
@@ -1084,22 +1294,37 @@ const viewer = (() => {
       return;
     }
 
-    const builder = BUILDERS[cfg.kind] || BUILDERS.sheet;
+    // A book can be shown closed or opened; everything else has one view.
+    const key = (cfg.kind === "book" && mode === "interior" && cfg.interior)
+      ? "book_interior" : cfg.kind;
+    const builder = BUILDERS[key] || BUILDERS.sheet;
     const next = builder(cfg);
     if (current) { scene.remove(current); dispose(current); }
     current = next;
     scene.add(current);
-    frame(current);
-    controls.autoRotate = true;
+
+    const reading = key === "book_interior";
+    frame(current, reading ? new THREE.Vector3(0, 0.55, 1) : null);
+    // Auto-rotating a page you are trying to read is just annoying.
+    controls.autoRotate = !reading;
   }
 
   function resetView() { if (ok && current) { frame(current); controls.autoRotate = true; } }
+  function setMode(next) { mode = next; if (lastCfg) render(lastCfg); }
 
   init();
-  return { render, resize, resetView };
+  return { render, resize, resetView, setMode };
 })();
 
 $('reset-view-btn').addEventListener('click', () => viewer.resetView());
+
+// Cover / Interior. Only meaningful for a book, so the switch only appears there.
+document.querySelectorAll('#view-modes [data-view]').forEach(btn =>
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('#view-modes [data-view]')
+      .forEach(b => b.classList.toggle('active', b === btn));
+    viewer.setMode(btn.dataset.view);
+  }));
 
 // =========================================================================
 //  Category step
@@ -1322,9 +1547,127 @@ async function refreshPreview() {
       body: JSON.stringify({ spec: state.spec }),
     });
     if (!res.ok) return;
-    viewer.render(await res.json());
+    const cfg = await res.json();
+    state.preview = cfg;
+    viewer.render(cfg);
+    $('view-modes').classList.toggle('hidden', !(cfg.kind === "book" && cfg.interior));
+    $('view-modes').classList.toggle('flex', cfg.kind === "book" && !!cfg.interior);
   } catch { /* preview is non-critical — never block quoting on it */ }
 }
+
+
+// =========================================================================
+//  Advanced settings — book typesetting
+//
+//  Kept out of the main spec grid because it is a different kind of decision:
+//  the grid describes the physical object, this describes how the text sits on
+//  the page. Most customers never open it, and leaving it shut is a valid
+//  answer — the shop's house style applies and no layout work is billed.
+// =========================================================================
+
+const ADV_SLIDERS = [
+  { key: "font_size_pt",      label: "Font size",      min: 7,    max: 18,  step: 0.5,  unit: "pt" },
+  { key: "line_spacing",      label: "Line spacing",   min: 1.0,  max: 2.2, step: 0.05, unit: "x"  },
+  { key: "letter_spacing_em", label: "Letter spacing", min: -0.03, max: 0.3, step: 0.01, unit: "em" },
+  { key: "margin_mm",         label: "Margins",        min: 8,    max: 35,  step: 1,    unit: "mm" },
+];
+
+function interiorDefaults() {
+  return { ...state.meta.book.interior_options.defaults };
+}
+
+function currentInterior() {
+  // null until the customer touches something, so the backend can tell the
+  // difference between "chose the defaults" and "did not choose".
+  return state.spec?.interior ?? null;
+}
+
+function renderAdvancedPanel() {
+  const io = state.meta.book.interior_options;
+  const v = { ...interiorDefaults(), ...(currentInterior() || {}) };
+
+  const faces = io.typefaces.map(f => `
+    <button type="button" class="face-btn ${v.typeface === f.value ? 'sel' : ''}" data-face="${escapeHtml(f.value)}"
+            title="${escapeHtml(f.note || '')}">
+      <span class="name">${escapeHtml(f.label)}</span>
+      <span class="samp" style="font-family:${f.css}">Handwriting sample</span>
+    </button>`).join("");
+
+  const tones = io.paper_tones.map(t => `
+    <button type="button" class="tone-sw ${v.paper_tone === t.value ? 'sel' : ''}" data-tone="${escapeHtml(t.value)}"
+            style="background:${t.hex}"
+            title="${escapeHtml(t.label)}${t.rate_multiplier !== 1 ? ` — ${Math.round((t.rate_multiplier-1)*100)}% more per sheet` : ''}"></button>`).join("");
+
+  const sliders = ADV_SLIDERS.map(sl => `
+    <div>
+      <label class="field-label">${sl.label}</label>
+      <div class="slider-row">
+        <input type="range" data-adv="${sl.key}" min="${sl.min}" max="${sl.max}" step="${sl.step}"
+               value="${v[sl.key]}">
+        <span class="val" data-advval="${sl.key}">${v[sl.key]}${sl.unit}</span>
+      </div>
+    </div>`).join("");
+
+  $('adv-body').innerHTML = `
+    <label class="field-label">Typeface</label>
+    <div class="grid grid-cols-2 sm:grid-cols-3 gap-2">${faces}</div>
+
+    <div class="grid sm:grid-cols-2 gap-4 mt-5">${sliders}</div>
+
+    <div class="grid sm:grid-cols-2 gap-4 mt-5">
+      <div>
+        <label class="field-label" for="adv-align">Text alignment</label>
+        <select id="adv-align" data-adv="text_align" class="field-input">
+          ${io.text_aligns.map(a => `<option value="${a}" ${v.text_align===a?'selected':''}>${prettify(a)}</option>`).join("")}
+        </select>
+      </div>
+      <div>
+        <label class="field-label">Page colour</label>
+        <div class="grid grid-cols-5 gap-2">${tones}</div>
+      </div>
+    </div>
+
+    <p class="text-[11px] text-[var(--ink-soft)] mt-4 leading-relaxed" id="adv-note"></p>`;
+
+  $('adv-body').querySelectorAll('[data-face]').forEach(b =>
+    b.addEventListener('click', () => setInterior({ typeface: b.dataset.face })));
+  $('adv-body').querySelectorAll('[data-tone]').forEach(b =>
+    b.addEventListener('click', () => setInterior({ paper_tone: b.dataset.tone })));
+  $('adv-body').querySelectorAll('input[data-adv]').forEach(inp => {
+    inp.addEventListener('input', () => {
+      const sl = ADV_SLIDERS.find(x => x.key === inp.dataset.adv);
+      $('adv-body').querySelector(`[data-advval="${inp.dataset.adv}"]`).textContent = inp.value + sl.unit;
+      setInterior({ [inp.dataset.adv]: parseFloat(inp.value) }, { rerender: false });
+    });
+  });
+  $('adv-align').addEventListener('change', e => setInterior({ text_align: e.target.value }));
+
+  updateAdvNote();
+}
+
+function updateAdvNote() {
+  const i = state.preview?.interior;
+  if (!i) return;
+  const el = $('adv-note');
+  if (el) {
+    el.textContent = `About ${i.lines_per_page} lines of ~${i.chars_per_line} characters per page.`
+      + (i.specified ? " Typesetting is charged once, not per copy." : " Currently the shop's house style — no layout charge.");
+  }
+}
+
+let advTimer;
+function setInterior(patch, { rerender = true } = {}) {
+  state.spec.interior = { ...interiorDefaults(), ...(currentInterior() || {}), ...patch };
+  if (rerender) renderAdvancedPanel();
+  clearTimeout(advTimer);
+  advTimer = setTimeout(() => refreshPreview().then(updateAdvNote), 220);
+}
+
+$('adv-toggle').addEventListener('click', () => {
+  const open = $('adv-panel').classList.toggle('open');
+  $('adv-toggle').setAttribute('aria-expanded', String(open));
+  $('adv-toggle').querySelector('.accordion-chevron').classList.toggle('open', open);
+});
 
 // =========================================================================
 //  Extract
@@ -1373,7 +1716,20 @@ $('extract-btn').addEventListener('click', async () => {
       ? `${state.missingFields.map(prettify).join(", ")} weren't stated. Fill them in below — anything left blank is priced at a documented default.`
       : `some details weren't detected confidently. Please review them below.`;
 
-    if (data.preview) viewer.render(data.preview);
+    if (data.preview) {
+      state.preview = data.preview;
+      viewer.render(data.preview, 'cover');
+      const isBook = data.preview.kind === "book" && !!data.preview.interior;
+      $('view-modes').classList.toggle('hidden', !isBook);
+      $('view-modes').classList.toggle('flex', isBook);
+      document.querySelectorAll('#view-modes [data-view]')
+        .forEach(b => b.classList.toggle('active', b.dataset.view === 'cover'));
+    }
+
+    // Typesetting only applies to books.
+    const showAdvanced = state.spec.category === "book";
+    $('advanced-wrap').classList.toggle('hidden', !showAdvanced);
+    if (showAdvanced) renderAdvancedPanel();
 
     unlocked.review = true;
     unlocked.quote = false;
@@ -1578,6 +1934,14 @@ async function loadCategories() {
       `Couldn't load the category matrices (${e.message}). Start the backend and reload.`;
     $('category-error').classList.remove('hidden');
   }
+}
+
+// The book faces are drawn onto a canvas; if they are not loaded yet the
+// canvas silently substitutes a default and the preview lies about the type.
+if (document.fonts && document.fonts.ready) {
+  document.fonts.ready.then(() => {
+    if (state.preview?.interior) viewer.render(state.preview);
+  });
 }
 
 $('footer-year').textContent = new Date().getFullYear();

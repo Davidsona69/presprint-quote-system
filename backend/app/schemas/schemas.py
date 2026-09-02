@@ -45,6 +45,32 @@ class BenchmarkSpec(_SpecBase):
     color_mode: Literal["full_color", "black_white"] | None = None
 
 
+class BookInterior(BaseModel):
+    """
+    How the text sits on the page — the typesetting, not the physical build.
+
+    A print shop quoting a book needs this. "200 pages, A5, perfect bound"
+    describes a brick; it says nothing about whether the text is 9pt Garamond
+    set tight or 13pt with generous leading, which is the difference between a
+    readable novel and an unreadable one, and which is real layout work
+    somebody has to be paid for.
+
+    Everything is optional. Left unset, the shop's house style applies and the
+    quote says so rather than pretending a choice was made.
+    """
+    typeface: str | None = None                     # matrix key, e.g. "eb_garamond"
+    font_size_pt: float | None = Field(default=None, ge=6, le=24)
+    line_spacing: float | None = Field(default=None, ge=1.0, le=2.5)   # multiple of font size
+    letter_spacing_em: float | None = Field(default=None, ge=-0.05, le=0.4)
+    text_align: Literal["left", "justified", "center"] | None = None
+    margin_mm: float | None = Field(default=None, ge=5, le=40)
+    paper_tone: str | None = None                   # matrix key, e.g. "cream"
+
+    def is_specified(self) -> bool:
+        """True once the customer has asked for anything non-default."""
+        return any(v is not None for v in self.model_dump().values())
+
+
 class BookSpec(_SpecBase):
     """Bound work. Spine thickness is derived from page count x interior GSM."""
     category: Literal["book"] = "book"
@@ -56,6 +82,11 @@ class BookSpec(_SpecBase):
     binding: Literal["saddle_stitch", "perfect", "spiral", "case"] | None = None
     cover_finish: Literal["matte", "glossy", "uncoated"] | None = None
     color_mode: Literal["full_color", "black_white"] | None = None
+
+    # Advanced/typesetting parameters. Nested rather than flattened because it
+    # is a distinct concern with its own defaults, and it stores cleanly in the
+    # quote's JSONB payload.
+    interior: BookInterior | None = None
 
 
 class MerchSpec(_SpecBase):
@@ -88,7 +119,11 @@ class PreviewConfig(BaseModel):
     finish: str | None = None                   # matte | glossy | uncoated
     color: str | None = None                    # hex or named base colour
     placements: list[str] = Field(default_factory=list)
-    notes: list[str] = Field(default_factory=list)       # derivation notes, e.g. spine maths
+    notes: list[str] = Field(default_factory=list)
+
+    # Book only: the resolved typesetting for the open-book view. Resolved
+    # server-side so the page the viewport draws is the page that was priced.
+    interior: dict | None = None       # derivation notes, e.g. spine maths
 
 
 # ------------------------------------------------------- NLP extraction ----

@@ -14,7 +14,7 @@ Book spine thickness in particular is a real calculation
 from __future__ import annotations
 
 from app.schemas.schemas import BenchmarkSpec, BookSpec, MerchSpec, PreviewConfig, Spec
-from app.services.pricing import book_spine_mm, load_matrix, normalized_book_page_count
+from app.services.pricing import book_spine_mm, load_matrix, normalized_book_page_count, resolve_book_interior, normalized_book_page_count
 
 # ISO/US sheet sizes in mm, portrait.
 SHEET_SIZES_MM: dict[str, tuple[float, float]] = {
@@ -106,17 +106,67 @@ def _book_preview(spec: BookSpec) -> PreviewConfig:
     binding = spec.binding or d["binding"]
     notes.append(f"Rendered as {binding.replace('_', ' ')}.")
 
+    # --- interior: work out how the text actually falls on the page --------
+    interior = resolve_book_interior(spec, m)
+    page_w, page_h = dims["width_mm"], dims["height_mm"]
+    margin = interior["margin_mm"]
+    text_w = max(page_w - 2 * margin, 10.0)
+    text_h = max(page_h - 2 * margin, 10.0)
+
+    # 1pt = 1/72 inch = 0.352778 mm.
+    pt_mm = 0.352778
+    line_h_mm = interior["font_size_pt"] * interior["line_spacing"] * pt_mm
+    lines_per_page = max(int(text_h // line_h_mm), 1)
+
+    # Average character advance for body text runs about 0.5 em; letter
+    # spacing adds to every advance.
+    char_mm = interior["font_size_pt"] * pt_mm * (0.5 + interior["letter_spacing_em"])
+    chars_per_line = max(int(text_w // char_mm), 1) if char_mm > 0 else 60
+
+    interior.update({
+        "page_width_mm": page_w,
+        "page_height_mm": page_h,
+        "text_width_mm": round(text_w, 1),
+        "text_height_mm": round(text_h, 1),
+        "line_height_mm": round(line_h_mm, 2),
+        "lines_per_page": lines_per_page,
+        "chars_per_line": chars_per_line,
+        "page_count": pages,
+    })
+
+    notes.append(
+        f"Interior: {interior['typeface_label']} {interior['font_size_pt']:g}pt / "
+        f"{interior['line_spacing']:g} leading, {interior['text_align']}, "
+        f"{margin:g} mm margins on {interior['paper_tone_label'].lower()} stock — "
+        f"about {lines_per_page} lines of ~{chars_per_line} characters per page."
+    )
+    if not interior["specified"]:
+        notes.append("Typesetting is the shop's house style; nothing has been charged for layout.")
+
+    # Typographers call 45-75 characters a comfortable measure.
+    if chars_per_line > 90:
+        notes.append(
+            f"~{chars_per_line} characters per line is a wide measure — the eye loses "
+            "its place returning to the next line. Wider margins or a larger size would help."
+        )
+    elif chars_per_line < 35:
+        notes.append(
+            f"~{chars_per_line} characters per line is narrow, which forces frequent "
+            "hyphenation and ragged word spacing."
+        )
+
     return PreviewConfig(
         kind="book",
         dimensions_mm={
-            "width": dims["width_mm"],
-            "height": dims["height_mm"],
+            "width": page_w,
+            "height": page_h,
             "spine": spine,
         },
         finish=spec.cover_finish or d["cover_finish"],
         color="#2C3244",
-        placements=["cover", "spine"],
+        placements=["cover", "spine", "interior"],
         notes=notes,
+        interior=interior,
     )
 
 

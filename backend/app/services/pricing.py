@@ -63,6 +63,45 @@ def _nearest_key(table: dict, value: float) -> str:
     return min(table, key=lambda k: abs(float(k) - value))
 
 
+def resolve_book_interior(spec: BookSpec, m: dict) -> dict:
+    """
+    Fill an interior spec out to concrete values using the shop's house style.
+
+    Returns the resolved settings plus `specified`, which says whether the
+    customer actually chose any of this. That flag is what decides if
+    typesetting is billed — applying house defaults is not layout work.
+    """
+    opts = m["book"]["interior_options"]
+    d = opts["defaults"]
+    given = spec.interior.model_dump() if spec.interior else {}
+    specified = any(v is not None for v in given.values())
+
+    resolved = {k: (given.get(k) if given.get(k) is not None else v) for k, v in d.items()}
+
+    faces = opts["typefaces"]
+    if resolved["typeface"] not in faces:
+        resolved["typeface"] = d["typeface"]
+    tones = opts["paper_tones"]
+    if resolved["paper_tone"] not in tones:
+        resolved["paper_tone"] = d["paper_tone"]
+    if resolved["text_align"] not in opts["text_aligns"]:
+        resolved["text_align"] = d["text_align"]
+
+    face = faces[resolved["typeface"]]
+    tone = tones[resolved["paper_tone"]]
+    resolved.update({
+        "specified": specified,
+        "typeface_label": face["label"],
+        "typeface_css": face["css"],
+        "typeface_kind": face["kind"],
+        "typeface_note": face.get("note", ""),
+        "paper_tone_label": tone["label"],
+        "paper_tone_hex": tone["hex"],
+        "paper_tone_multiplier": tone["rate_multiplier"],
+    })
+    return resolved
+
+
 # ------------------------------------------------------------- benchmark ---
 
 def _price_benchmark(spec: BenchmarkSpec, m: dict) -> tuple[list[CostLineItem], list[str]]:
@@ -166,11 +205,16 @@ def _price_book(spec: BookSpec, m: dict) -> tuple[list[CostLineItem], list[str]]
     ]
     leaves = math.ceil(pages / 2)
     sheets_per_copy = math.ceil(leaves / up)
-    interior_paper = sheet_rate * sheets_per_copy * qty
+    interior = resolve_book_interior(spec, m)
+    tone_mult = interior["paper_tone_multiplier"]
+
+    interior_paper = sheet_rate * sheets_per_copy * qty * tone_mult
+    tone_bit = f", {interior['paper_tone_label'].lower()}" if tone_mult != 1.0 else ""
     items.append(CostLineItem(
-        label=f"Interior paper — {interior_gsm}gsm, {pages}pp {trim}",
+        label=f"Interior paper — {interior_gsm}gsm{tone_bit}, {pages}pp {trim}",
         amount_xaf=round(interior_paper, 2),
-        detail=f"{sheets_per_copy} sheets/copy ({leaves} leaves, {up}-up) x {sheet_rate} XAF x {qty}",
+        detail=(f"{sheets_per_copy} sheets/copy ({leaves} leaves, {up}-up) x {sheet_rate} XAF x {qty}"
+                + (f" x {tone_mult:g} ({interior['paper_tone_label'].lower()} stock)" if tone_mult != 1.0 else "")),
     ))
 
     # 2. Interior ink — per printed page.
@@ -231,7 +275,36 @@ def _price_book(spec: BookSpec, m: dict) -> tuple[list[CostLineItem], list[str]]
             detail=f"{fin['flat']} setup + {fin['per_unit']} x {qty}",
         ))
 
-    # 6. Extra finishing.
+    # 6. Typesetting. Billed only when the customer specified the interior —
+    # laying out a book to a chosen face, size and measure is real work, but
+    # falling back to house style is not.
+    if interior["specified"]:
+        opts = cfg["interior_options"]
+        rate = opts["typesetting_rate_per_page_xaf"]
+        floor = opts["typesetting_minimum_xaf"]
+        cost = max(rate * pages, floor)
+        items.append(CostLineItem(
+            label=(f"Typesetting — {interior['typeface_label']} "
+                   f"{interior['font_size_pt']:g}pt/{interior['line_spacing']:g}, "
+                   f"{interior['text_align']}"),
+            amount_xaf=round(cost, 2),
+            detail=(f"{rate} XAF/page x {pages}pp"
+                    + (f" (minimum {floor:,} XAF applied)" if rate * pages < floor else "")
+                    + " — one-off, not per copy"),
+        ))
+        if interior["typeface_kind"] == "handwriting" and (interior["font_size_pt"] or 0) < 12:
+            warnings.append(
+                f"{interior['typeface_label']} is a handwriting face and reads small; "
+                f"at {interior['font_size_pt']:g}pt it may be hard to read in print. "
+                "Consider 13pt or larger."
+            )
+        if interior["line_spacing"] < 1.2:
+            warnings.append(
+                f"Line spacing of {interior['line_spacing']:g} is tight for body text; "
+                "below about 1.2 the lines start to crowd."
+            )
+
+    # 7. Extra finishing.
     for op in spec.finishing:
         r = cfg["finishing_rates"].get(op)
         if not r:

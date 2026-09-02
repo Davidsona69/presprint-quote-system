@@ -1158,6 +1158,9 @@ function buildBookInterior(cfg) {
     face.position.x = side * (w / 2) * Math.cos(tilt);
     face.position.z = (w / 2) * Math.sin(tilt) - (w / 2) * Math.sin(tilt);
     g.add(face);
+    // The recto is what the camera settles on: you edit typesetting to read it,
+    // not to admire the spread.
+    if (side === 1) g.userData.focus = face;
 
     // The block of leaves underneath, so it reads as a book not two sheets.
     const blockMat = new THREE.MeshStandardMaterial({ color: 0xEDE7DA, roughness: 0.95 });
@@ -1245,23 +1248,29 @@ const viewer = (() => {
     renderer.setSize(w, h, false);
     camera.aspect = w / h;
     camera.updateProjectionMatrix();
-    if (current) frame(current, mode === "interior" ? new THREE.Vector3(0, 0.55, 1) : null);
+    if (current) resetView();
   }
 
-  function frame(object, viewDir) {
+  function frame(object, viewDir, padding = 1.15) {
     const box = new THREE.Box3().setFromObject(object);
-    const sphere = box.getBoundingSphere(new THREE.Sphere());
+    const size = box.getSize(new THREE.Vector3());
+    const centre = box.getCenter(new THREE.Vector3());
 
-    // `camera.fov` is the VERTICAL field of view. In a tall, narrow viewport the
-    // horizontal field is much smaller, so framing on the vertical alone crops
-    // anything wide — an open book spread most of all. Fit to whichever is tighter.
+    // `camera.fov` is the VERTICAL field of view; the horizontal one follows
+    // from the aspect ratio, and in a tall narrow viewport it is much smaller.
+    // Fit the bounding BOX to both, rather than the bounding sphere: a sphere
+    // around a page is 20% wider than the page, and that slack is exactly the
+    // zooming-in you would otherwise have to do by hand.
     const vFov = camera.fov * Math.PI / 180;
     const hFov = 2 * Math.atan(Math.tan(vFov / 2) * camera.aspect);
-    const dist = sphere.radius / Math.sin(Math.min(vFov, hFov) / 2) * 1.15;
+    const dist = Math.max(
+      (size.y / 2) / Math.tan(vFov / 2),
+      (Math.max(size.x, size.z) / 2) / Math.tan(hFov / 2),
+    ) * padding + size.z / 2;
 
-    controls.target.copy(sphere.center);
+    controls.target.copy(centre);
     const dir = viewDir || new THREE.Vector3(0.55, 0.42, 1);
-    camera.position.copy(sphere.center).add(dir.clone().normalize().multiplyScalar(dist));
+    camera.position.copy(centre).add(dir.clone().normalize().multiplyScalar(dist));
     camera.near = Math.max(dist / 100, 0.01);
     camera.far = dist * 10;
     camera.updateProjectionMatrix();
@@ -1276,7 +1285,7 @@ const viewer = (() => {
     });
   }
 
-  let lastCfg = null, mode = 'cover';
+  let lastCfg = null, mode = 'cover', lastKey = null;
 
   function render(cfg, nextMode) {
     lastCfg = cfg;
@@ -1304,12 +1313,30 @@ const viewer = (() => {
     scene.add(current);
 
     const reading = key === "book_interior";
-    frame(current, reading ? new THREE.Vector3(0, 0.55, 1) : null);
+
+    // Re-framing on every render threw away the camera each time a slider
+    // moved — zoom in to check the leading, nudge the size, and you were back
+    // where you started. Only re-frame when the thing on screen actually
+    // changes; a texture swap keeps whatever view you had set up.
+    if (key !== lastKey) {
+      const target = reading ? (current.userData.focus || current) : current;
+      frame(target,
+            reading ? new THREE.Vector3(0.06, 0.16, 1) : null,
+            reading ? 1.04 : 1.15);
+      lastKey = key;
+    }
     // Auto-rotating a page you are trying to read is just annoying.
     controls.autoRotate = !reading;
   }
 
-  function resetView() { if (ok && current) { frame(current); controls.autoRotate = true; } }
+  function resetView() {
+    if (!ok || !current) return;
+    const reading = mode === "interior" && current.userData.focus;
+    frame(reading ? current.userData.focus : current,
+          reading ? new THREE.Vector3(0.06, 0.16, 1) : null,
+          reading ? 1.04 : 1.15);
+    controls.autoRotate = !reading;
+  }
   function setMode(next) { mode = next; if (lastCfg) render(lastCfg); }
 
   init();

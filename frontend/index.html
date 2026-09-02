@@ -10,7 +10,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <!-- Body faces offered for book interiors; the 3D page is drawn in these. -->
-<link href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,600;1,400&family=Lora:ital,wght@0,400;0,600;1,400&family=Merriweather:ital,wght@0,400;0,700;1,400&family=Open+Sans:ital,wght@0,400;0,600;1,400&family=Caveat:wght@400;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Architects+Daughter&family=Caveat:wght@400;600&family=Dancing+Script:wght@400;600&family=EB+Garamond:ital,wght@0,400;0,600;1,400&family=Homemade+Apple&family=Indie+Flower&family=Kalam:wght@300;400;700&family=Lora:ital,wght@0,400;0,600;1,400&family=Merriweather:ital,wght@0,400;0,700;1,400&family=Open+Sans:ital,wght@0,400;0,600;1,400&family=Patrick+Hand&family=Shadows+Into+Light&display=swap" rel="stylesheet">
 <script type="importmap">
 {
   "imports": {
@@ -261,6 +261,11 @@
     font-family: 'IBM Plex Mono', monospace; font-size: .74rem; color: var(--ink-soft);
     min-width: 48px; text-align: right;
   }
+  .face-group-label {
+    font-size: .65rem; font-weight: 600; letter-spacing: .07em; text-transform: uppercase;
+    color: var(--ink-faint); margin: 12px 0 6px;
+  }
+  .face-group-label:first-child { margin-top: 0; }
   .face-btn {
     text-align: left; padding: 8px 11px; border: 1.5px solid var(--line);
     border-radius: 10px; background: var(--surface); cursor: pointer; width: 100%;
@@ -1576,12 +1581,31 @@ async function refreshPreview() {
     if (!res.ok) return;
     const cfg = await res.json();
     state.preview = cfg;
+    if (cfg.interior) await ensureFaceLoaded(cfg.interior.typeface_css);
     viewer.render(cfg);
     $('view-modes').classList.toggle('hidden', !(cfg.kind === "book" && cfg.interior));
     $('view-modes').classList.toggle('flex', cfg.kind === "book" && !!cfg.interior);
   } catch { /* preview is non-critical — never block quoting on it */ }
 }
 
+
+
+/**
+ * Make sure a typeface is actually available before the canvas draws with it.
+ *
+ * Google Fonts are fetched lazily, and canvas does not wait: draw with a face
+ * the browser has not finished loading and it silently substitutes a default.
+ * The page would then show the wrong type while claiming the right one — the
+ * one thing a typesetting preview must never do.
+ */
+async function ensureFaceLoaded(cssStack, sizePx = 32) {
+  if (!document.fonts || !cssStack) return;
+  const family = (cssStack.match(/'([^']+)'/) || [])[1];
+  if (!family) return;
+  try {
+    await document.fonts.load(`${sizePx}px '${family}'`);
+  } catch { /* fall back to whatever the browser has; better than blocking */ }
+}
 
 // =========================================================================
 //  Advanced settings — book typesetting
@@ -1613,12 +1637,25 @@ function renderAdvancedPanel() {
   const io = state.meta.book.interior_options;
   const v = { ...interiorDefaults(), ...(currentInterior() || {}) };
 
-  const faces = io.typefaces.map(f => `
-    <button type="button" class="face-btn ${v.typeface === f.value ? 'sel' : ''}" data-face="${escapeHtml(f.value)}"
-            title="${escapeHtml(f.note || '')}">
-      <span class="name">${escapeHtml(f.label)}</span>
-      <span class="samp" style="font-family:${f.css}">Handwriting sample</span>
-    </button>`).join("");
+  const GROUPS = [
+    ["serif", "Typeset — serif"],
+    ["sans", "Typeset — sans serif"],
+    ["handwriting", "Handwriting"],
+  ];
+  const faces = GROUPS.map(([kind, heading]) => {
+    const inGroup = io.typefaces.filter(f => f.kind === kind);
+    if (!inGroup.length) return "";
+    return `
+      <div class="face-group-label">${escapeHtml(heading)}</div>
+      <div class="grid grid-cols-2 sm:grid-cols-3 gap-2">
+        ${inGroup.map(f => `
+          <button type="button" class="face-btn ${v.typeface === f.value ? 'sel' : ''}"
+                  data-face="${escapeHtml(f.value)}" title="${escapeHtml(f.note || '')}">
+            <span class="name">${escapeHtml(f.label)}${f.body_safe === false ? ' · display' : ''}</span>
+            <span class="samp" style="font-family:${f.css}">Handwriting sample</span>
+          </button>`).join("")}
+      </div>`;
+  }).join("");
 
   const tones = io.paper_tones.map(t => `
     <button type="button" class="tone-sw ${v.paper_tone === t.value ? 'sel' : ''}" data-tone="${escapeHtml(t.value)}"
@@ -1637,7 +1674,7 @@ function renderAdvancedPanel() {
 
   $('adv-body').innerHTML = `
     <label class="field-label">Typeface</label>
-    <div class="grid grid-cols-2 sm:grid-cols-3 gap-2">${faces}</div>
+    ${faces}
 
     <div class="grid sm:grid-cols-2 gap-4 mt-5">${sliders}</div>
 
@@ -1745,6 +1782,7 @@ $('extract-btn').addEventListener('click', async () => {
 
     if (data.preview) {
       state.preview = data.preview;
+      if (data.preview.interior) await ensureFaceLoaded(data.preview.interior.typeface_css);
       viewer.render(data.preview, 'cover');
       const isBook = data.preview.kind === "book" && !!data.preview.interior;
       $('view-modes').classList.toggle('hidden', !isBook);

@@ -374,6 +374,11 @@ The book review step has an **Advanced settings** panel covering typeface, size,
 line spacing, letter spacing, alignment, margins and page colour. It stays shut
 by default; most customers leave the interior to the shop.
 
+Twelve faces, grouped: four typeset (EB Garamond, Lora, Merriweather, Open Sans)
+and **eight handwriting hands** — Patrick Hand, Caveat, Indie Flower, Architects
+Daughter, Kalam, Shadows Into Light, Dancing Script and Homemade Apple. Each
+previews in its own type, so you pick by eye rather than by name.
+
 The 3D viewport gains a **Cover / Interior** switch. Interior opens the book and
 draws the actual page — the chosen face at the chosen size, line-broken and
 justified for real onto the chosen paper tone. It is a canvas texture, so the
@@ -387,8 +392,12 @@ Two things carry a cost, both from the matrix:
   The house default tone is deliberately a 1.0 multiplier, so an unspecified
   book quote is priced exactly as it was before this feature existed.
 
-The engine also warns rather than silently pricing something unreadable: a
-handwriting face below 12pt, or line spacing under 1.2. And the preview reports
+The engine also warns rather than silently pricing something unreadable, and the
+advice comes from the face itself rather than one blanket rule: Patrick Hand is
+comfortable at 12pt, Homemade Apple is not. Faces marked `body_safe: false` —
+Dancing Script, Homemade Apple — are flagged as display faces at any size,
+because no amount of leading makes a whole chapter of copperplate readable.
+Line spacing under 1.2 is flagged too. And the preview reports
 the measure — typographers call 45–75 characters a line comfortable, so it says
 so when you stray far outside it.
 

@@ -95,6 +95,8 @@ def resolve_book_interior(spec: BookSpec, m: dict) -> dict:
         "typeface_css": face["css"],
         "typeface_kind": face["kind"],
         "typeface_note": face.get("note", ""),
+        "typeface_min_pt": face.get("min_recommended_pt"),
+        "typeface_body_safe": face.get("body_safe", True),
         "paper_tone_label": tone["label"],
         "paper_tone_hex": tone["hex"],
         "paper_tone_multiplier": tone["rate_multiplier"],
@@ -292,11 +294,21 @@ def _price_book(spec: BookSpec, m: dict) -> tuple[list[CostLineItem], list[str]]
                     + (f" (minimum {floor:,} XAF applied)" if rate * pages < floor else "")
                     + " — one-off, not per copy"),
         ))
-        if interior["typeface_kind"] == "handwriting" and (interior["font_size_pt"] or 0) < 12:
+        # Legibility advice comes from the face itself: handwriting faces vary
+        # enormously in how small they can be set, and a couple are decorative
+        # only. Warn, never refuse — it is the customer's book.
+        min_pt = interior.get("typeface_min_pt")
+        if min_pt and (interior["font_size_pt"] or 0) < min_pt:
             warnings.append(
-                f"{interior['typeface_label']} is a handwriting face and reads small; "
-                f"at {interior['font_size_pt']:g}pt it may be hard to read in print. "
-                "Consider 13pt or larger."
+                f"{interior['typeface_label']} sets small; at "
+                f"{interior['font_size_pt']:g}pt it will be hard to read in print. "
+                f"{min_pt:g}pt or larger is recommended for this face."
+            )
+        if not interior.get("typeface_body_safe", True):
+            warnings.append(
+                f"{interior['typeface_label']} is a display face. It suits a title page "
+                "or a dedication; over a whole book it becomes tiring to read. "
+                "Consider it for the cover and a plainer face for the text."
             )
         if interior["line_spacing"] < 1.2:
             warnings.append(

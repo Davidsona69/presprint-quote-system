@@ -234,31 +234,97 @@
           "label": "EB Garamond",
           "css": "'EB Garamond', Georgia, serif",
           "kind": "serif",
-          "note": "Classic book face. Small on the page, set a size up."
+          "note": "Classic book face. Sets small — go a size up.",
+          "min_recommended_pt": 10,
+          "body_safe": true
         },
         "lora": {
           "label": "Lora",
           "css": "'Lora', Georgia, serif",
           "kind": "serif",
-          "note": "Contemporary serif, comfortable at 11pt."
+          "note": "Contemporary serif, comfortable at 11pt.",
+          "min_recommended_pt": 9,
+          "body_safe": true
         },
         "merriweather": {
           "label": "Merriweather",
           "css": "'Merriweather', Georgia, serif",
           "kind": "serif",
-          "note": "Large x-height. Good for textbooks and long reading."
+          "note": "Large x-height. Textbooks and long reading.",
+          "min_recommended_pt": 9,
+          "body_safe": true
         },
         "open_sans": {
           "label": "Open Sans",
           "css": "'Open Sans', Helvetica, sans-serif",
           "kind": "sans",
-          "note": "Sans serif. Manuals, workbooks, exercise books."
+          "note": "Manuals, workbooks, exercise books.",
+          "min_recommended_pt": 9,
+          "body_safe": true
+        },
+        "patrick_hand": {
+          "label": "Patrick Hand",
+          "css": "'Patrick Hand', cursive",
+          "kind": "handwriting",
+          "note": "Neat print hand. The most readable of the handwriting faces — safe for a whole book.",
+          "min_recommended_pt": 12,
+          "body_safe": true
         },
         "caveat": {
-          "label": "Caveat (handwriting)",
+          "label": "Caveat",
           "css": "'Caveat', cursive",
           "kind": "handwriting",
-          "note": "Handwriting style. Set it larger — it reads small."
+          "note": "Quick casual marker hand. Sets small; give it room.",
+          "min_recommended_pt": 13,
+          "body_safe": true
+        },
+        "indie_flower": {
+          "label": "Indie Flower",
+          "css": "'Indie Flower', cursive",
+          "kind": "handwriting",
+          "note": "Rounded and informal. Children's books, activity books.",
+          "min_recommended_pt": 13,
+          "body_safe": true
+        },
+        "architects_daughter": {
+          "label": "Architects Daughter",
+          "css": "'Architects Daughter', cursive",
+          "kind": "handwriting",
+          "note": "Block hand, drafting style. Wide — expect fewer words per line.",
+          "min_recommended_pt": 12,
+          "body_safe": true
+        },
+        "kalam": {
+          "label": "Kalam",
+          "css": "'Kalam', cursive",
+          "kind": "handwriting",
+          "note": "Brush pen. Heavier stroke, holds up on rough stock.",
+          "min_recommended_pt": 12,
+          "body_safe": true
+        },
+        "shadows_into_light": {
+          "label": "Shadows Into Light",
+          "css": "'Shadows Into Light', cursive",
+          "kind": "handwriting",
+          "note": "Light joined hand. Thin strokes — avoid on kraft or dark stock.",
+          "min_recommended_pt": 13,
+          "body_safe": true
+        },
+        "dancing_script": {
+          "label": "Dancing Script",
+          "css": "'Dancing Script', cursive",
+          "kind": "handwriting",
+          "note": "Flowing cursive. Lovely for a dedication or a title page; tiring over a whole chapter.",
+          "min_recommended_pt": 14,
+          "body_safe": false
+        },
+        "homemade_apple": {
+          "label": "Homemade Apple",
+          "css": "'Homemade Apple', cursive",
+          "kind": "handwriting",
+          "note": "Fountain-pen cursive, closest to real handwriting. Decorative only — it is genuinely hard to read at length.",
+          "min_recommended_pt": 15,
+          "body_safe": false
         }
       },
       "paper_tones": {
@@ -305,7 +371,8 @@
         "margin_mm": 18.0,
         "paper_tone": "white"
       },
-      "_default_tone_note": "House tone is a 1.0-multiplier stock on purpose. A default that carried a premium would quietly raise every book quote that never asked for it."
+      "_default_tone_note": "House tone is a 1.0-multiplier stock on purpose. A default that carried a premium would quietly raise every book quote that never asked for it.",
+      "_typeface_note": "body_safe=false marks faces that look beautiful on a title page and punish the reader over a chapter. The engine warns rather than refusing — it is the customer's book."
     }
   },
   "merch": {

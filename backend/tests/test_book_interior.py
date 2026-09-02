@@ -84,8 +84,59 @@ async def test_unreadable_choices_are_warned_about_not_silently_priced(client):
         res = await ac.post("/calculate-quote", json={
             "spec": with_interior(typeface="caveat", font_size_pt=9, line_spacing=1.05)})
     warnings = " ".join(res.json()["warnings"])
-    assert "handwriting face" in warnings
+    assert "sets small" in warnings and "13pt" in warnings
     assert "tight" in warnings
+
+
+@pytest.mark.asyncio
+async def test_legibility_advice_is_per_face_not_one_number(client):
+    """Patrick Hand is fine at 12pt; Homemade Apple is not. The face decides."""
+    async with client as ac:
+        neat = await ac.post("/calculate-quote", json={
+            "spec": with_interior(typeface="patrick_hand", font_size_pt=12)})
+        script = await ac.post("/calculate-quote", json={
+            "spec": with_interior(typeface="homemade_apple", font_size_pt=12)})
+
+    assert not any("sets small" in w for w in neat.json()["warnings"])
+    assert any("sets small" in w for w in script.json()["warnings"])
+
+
+@pytest.mark.asyncio
+async def test_display_faces_are_flagged_even_when_set_large(client):
+    """Size does not rescue a face that is decorative by nature."""
+    async with client as ac:
+        res = await ac.post("/calculate-quote", json={
+            "spec": with_interior(typeface="dancing_script", font_size_pt=18)})
+    warnings = " ".join(res.json()["warnings"])
+    assert "display face" in warnings
+    assert "sets small" not in warnings, "18pt is not small; only the display note applies"
+
+
+@pytest.mark.asyncio
+async def test_a_body_safe_handwriting_face_draws_no_complaint(client):
+    async with client as ac:
+        res = await ac.post("/calculate-quote", json={
+            "spec": with_interior(typeface="indie_flower", font_size_pt=13, line_spacing=1.5)})
+    assert res.json()["warnings"] == []
+
+
+@pytest.mark.asyncio
+async def test_every_handwriting_face_previews(client):
+    """Each hand must survive the whole pipeline, not just appear in a list."""
+    async with client as ac:
+        io = (await ac.get("/categories")).json()["book"]["interior_options"]
+        hands = [f["value"] for f in io["typefaces"] if f["kind"] == "handwriting"]
+        assert len(hands) >= 6, "a single handwriting option is not a choice"
+
+        for face in hands:
+            res = await ac.post("/preview-model", json={"spec": with_interior(typeface=face)})
+            assert res.status_code == 200, face
+            i = res.json()["interior"]
+            assert i["typeface"] == face
+            # The 3D page draws with this stack; without it the canvas would
+            # silently fall back and the preview would misrepresent the type.
+            assert i["typeface_css"].startswith("'"), face
+            assert i["lines_per_page"] > 0, face
 
 
 # --------------------------------------------------------------- preview ---
